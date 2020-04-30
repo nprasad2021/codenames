@@ -1,0 +1,19 @@
+.isHidden {
+    display: none;
+}
+
+.teams {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+}
+
+.red {
+    color: red;
+    background-color: red;
+}
+
+.blue {
+    color: red;
+    background-color: blue;
+}

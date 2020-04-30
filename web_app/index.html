@@ -3,14 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <title>codenames</title>
+    <link rel="stylesheet" href="game.css">
 </head>
 <body>
-    <section class="rooms">
+    <section class="login">
         <h2>Join an existing room</h2>
-    </section>
-    <section>
-        <h2>Create your own room</h2>
-        <form action="">
+        <form action="" class="joinRoom">
             <label>
                 Username
                 <input type="text" name="user">
@@ -25,7 +23,24 @@
             </label>
             <input type="submit" value="Submit">
         </form>
-
+    </section>
+    <section class="login">
+        <h2>Create your own room</h2>
+        <form action="" class="createRoom">
+            <label>
+                Username
+                <input type="text" name="user">
+            </label>
+            <label>
+                Room Name:
+                <input type="text" name="room">
+            </label>
+            <label>
+                Password:
+                <input type="password" name="password">
+            </label>
+            <input type="submit" value="Submit">
+        </form>
     </section>
 </body>
 <script src="login.js"></script>

@@ -52,8 +52,9 @@ type Client struct {
 }
 
 type User struct {
-	room interface{}
-	password interface{}
+	room string
+	password string
+	username string
 }
 
 func trim(str string) string{
@@ -62,7 +63,7 @@ func trim(str string) string{
 	return str
 }
 
-func (c *Client) processMessage(message string) {
+func (c *Client) processMessage(message string) map[string]string {
 	message = trim(message)
 	log.Print("\"")
 	m := make(map[string]string)
@@ -71,7 +72,7 @@ func (c *Client) processMessage(message string) {
 		par := strings.Split(pair, ":")
 		m[trim(par[0])] = trim(par[1])
 	}
-	log.Print(m)
+	return m
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -96,9 +97,25 @@ func (c *Client) readPump() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		c.processMessage(string(message));
-		log.Print(string(message))
-		c.hub.broadcast <- message
+		procMessage := c.processMessage(string(message))
+		if procMessage["type"] == "joinRoom" {
+			if ok, _ := c.hub.rooms[procMessage["room"]]; !ok {
+				c.send <- []byte("RoomDoesNotExistError")
+				return
+			}
+		}
+		if procMessage["type"] == "createRoom" || procMessage["type"] == "joinRoom" {
+			c.hub.rooms[procMessage["room"]] = true
+			user := User{
+				room:     procMessage["room"],
+				password: procMessage["password"],
+				username: procMessage["username"],
+			}
+			c.user = user
+			c.send <- []byte("Success")
+		} else {
+			c.hub.broadcast <- message
+		}
 	}
 }
 
