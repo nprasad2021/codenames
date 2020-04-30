@@ -2,18 +2,20 @@ let conn;
 let body = document.querySelector("body");
 
 document.querySelector("form").onsubmit = function () {
+    let name = document.querySelector('input[name="user"]');
     let room = document.querySelector('input[name="room"]');
     let password = document.querySelector('input[name="password"]');
     if (!conn) {
         return false;
     }
-    if (!room || !password) {
+    if (!room || !password || !name) {
         return false;
     }
-    let msg = JSON.stringify({"room": room.value, "password": password.value});
+    let msg = JSON.stringify({"username": name.value, "room": room.value, "password": password.value});
     conn.send(msg);
     room.value = "";
     password.value = "";
+    name.value = "";
     return false;
 };
 

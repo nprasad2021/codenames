@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -46,6 +47,31 @@ type Client struct {
 
 	// Buffered channel of outbound messages.
 	send chan []byte
+
+	user User
+}
+
+type User struct {
+	room interface{}
+	password interface{}
+}
+
+func trim(str string) string{
+	str = str[1:]
+	str = str[:len(str)-1]
+	return str
+}
+
+func (c *Client) processMessage(message string) {
+	message = trim(message)
+	log.Print("\"")
+	m := make(map[string]string)
+	parts := strings.Split(message, ",")
+	for _, pair := range parts {
+		par := strings.Split(pair, ":")
+		m[trim(par[0])] = trim(par[1])
+	}
+	log.Print(m)
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -70,6 +96,8 @@ func (c *Client) readPump() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+		c.processMessage(string(message));
+		log.Print(string(message))
 		c.hub.broadcast <- message
 	}
 }
