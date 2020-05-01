@@ -9,11 +9,13 @@ import (
 	"sync"
 )
 
-func (h *Hub) addUser(room string, username string) {
+func (h *Hub) processMessage(vars map[string]string) {
 	h.mu.Lock()
-	h.rooms[room] = append(h.rooms[room], username)
+
 	h.mu.Unlock()
 }
+
+
 
 // Hub maintains the set of active clients and broadcasts messages to the
 // clients.
