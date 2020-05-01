@@ -23,9 +23,8 @@ type Cell struct {
 	clicked bool
 }
 
-
 type Game struct {
-	board   []Cell
+	board []*Cell
 
 	currentColor string
 	currentRole  string
@@ -34,8 +33,28 @@ type Game struct {
 	currentFreq int
 }
 
+func isPlayersComplete(players []*Player) bool {
+	cs := []string{RED + SPYMASTER, BLUE + SPYMASTER, RED + GUESSER, BLUE + GUESSER}
+	combos := make(map[string]bool)
+	for _, p := range cs {
+		combos[p] = false
+	}
+
+	for _, p := range players {
+		trole := p.team + p.role
+		combos[trole] = true
+	}
+	for _, v := range combos {
+		if v == false {
+			return false
+		}
+	}
+	return true
+
+}
+
 // word;color;clicked;
-func (gm *Game) Guess(cell int){
+func (gm *Game) Guess(cell int) {
 	if gm.currentRole != GUESSER || gm.currentFreq == 0 || gm.board[cell].clicked == true {
 		log.Fatalf("invalid operation")
 	}
@@ -106,7 +125,7 @@ func MakeGame(words []string) *Game {
 		log.Fatalf("Expect 25 words")
 	}
 	game := &Game{}
-	game.board = []Cell{}
+	game.board = []*Cell{}
 	game.currentColor = RED
 	game.currentRole = SPYMASTER
 
@@ -120,6 +139,7 @@ func MakeGame(words []string) *Game {
 		index := getColor(numLeft)
 		numLeft[index] -= 1
 		c.color = COLORS[index]
+		game.board = append(game.board, c)
 
 	}
 	return game

@@ -2,20 +2,22 @@
     display: none;
 }
 
-.teams {
+#teams {
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr;
 }
 
-.red {
-    color: red;
-    background-color: red;
-    width: 60%;
+#board {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
 }
 
-.blue {
+.rTeam {
     color: red;
-    background-color: blue;
-    width: 65%;
+}
+
+.bTeam {
+    color: blue;
 }

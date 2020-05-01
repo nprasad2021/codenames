@@ -6,6 +6,9 @@
     <link rel="stylesheet" href="game.css">
 </head>
 <body>
+<div class="err">
+
+</div>
 <section id="loginUI">
     <label>
         Username
@@ -30,29 +33,46 @@
     <ul>
 
     </ul>
-    <button id="approveParts" class="isHidden">Ok</button>
+    <button id="approveParts" class="isHidden">Start game</button>
 </section>
 <section class="isHidden" id="teamsUI">
-    <section class="red">
-        <div>
+    <section id="teams">
+        <section class="rTeam">
+            <ul>
 
-        </div>
-        <button>Red Team</button>
+            </ul>
+        </section>
+        <section class="bTeam">
+            <ul>
+
+            </ul>
+        </section>
     </section>
-    <section class="blue">
-        <div>
 
-        </div>
-        <button>Blue Team</button>
-    </section>
+    <label>
+        Team:
+        <select id="selectTeam">
+            <option value="RED">Red</option>
+            <option value="BLUE">Blue</option>
+        </select>
+    </label>
+    <label>
+        Role:
+        <select id="selectRole">
+            <option value="SPYMASTER">Spymaster</option>
+            <option value="GUESSER">Guesser</option>
+        </select>
+    </label>
+    <div>
 
+    </div>
     <button class="isHidden">Play</button>
 </section>
 <section class="isHidden" id="gameUI">
     <section id="meta">
 
     </section>
-    <section id="grid">
+    <section id="board">
 
     </section>
 </section>
