@@ -10,6 +10,7 @@ const (
 	BLUE    = "BLUE"
 	DEAD    = "DEAD"
 	NEUTRAL = "NEUTRAL"
+	WHITE = "WHITE"
 
 	SPYMASTER = "SPYMASTER"
 	GUESSER   = "GUESSER"
@@ -76,17 +77,20 @@ func (gm *Game) Spy(word string, num int) bool {
 	return true
 }
 
-func (gm *Game) Render() string {
+func (gm *Game) Render(role string) string {
 	render := ""
 	for i := 0; i < len(gm.board); i++ {
 		cell := gm.board[i]
-		render += cell.word + "," + cell.color + ","
+		color := cell.color
+		if role == GUESSER && !cell.clicked {
+			color = WHITE
+		}
+		render += cell.word + "," + color + ","
 		if cell.clicked {
 			render += "1;"
 		} else {
 			render += "0;"
 		}
-
 	}
 	return render[:len(render)-1]
 }

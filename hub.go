@@ -24,6 +24,26 @@ type Room struct {
 	game *Game
 }
 
+func (h *Hub) sendClientsGame(room *Room, messagePrefix string){
+
+	for _, c := range room.clients {
+		if _, ok := h.clients[c]; ok {
+			role := ""
+			for _, p := range room.players {
+				if p.username == c.username {
+					role = p.role
+				}
+			}
+			if role == "" {
+				log.Fatalf("player does not exist in records")
+			}
+			msg := messagePrefix + room.game.Render(role)
+			log.Printf("sending message %v", msg)
+			c.send <- []byte(msg)
+		}
+	}
+}
+
 func (h *Hub) sendClients(clients []*Client, message string){
 	for _, c := range clients {
 		if _, ok := h.clients[c]; ok {
@@ -143,10 +163,8 @@ func (h *Hub) processMessage(vars map[string]string, c *Client) {
 			log.Fatalf("Impossible to start game")
 		}
 		room.roomState = "game"
-
 		msg := "initGame:"
-		msg += room.game.Render()
-		h.sendClients(room.clients, msg)
+		h.sendClientsGame(room, msg)
 	} else if vars["type"] == "spyMove" {
 		room := h.rooms[vars["room"]]
 		num, _ := strconv.ParseInt(vars["num"], 10, 8)
@@ -158,7 +176,7 @@ func (h *Hub) processMessage(vars map[string]string, c *Client) {
 		num, _ := strconv.ParseInt(vars["cell"], 10, 8)
 		room.game.Guess(int(num))
 		msg := "boardRender:"
-		msg += room.game.Render()
+		msg += room.game.Render("GUESSER")
 		h.sendClients(room.clients, msg)
 	}
 }
