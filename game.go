@@ -23,11 +23,6 @@ type Cell struct {
 	clicked bool
 }
 
-type Player struct {
-	username string
-	team     string
-	role     string
-}
 
 type Game struct {
 	board   []Cell

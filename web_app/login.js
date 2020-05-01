@@ -36,7 +36,7 @@ document.querySelector(".joinRoom").onsubmit = sendRoom("joinRoom");
 document.querySelector(".red > button").addEventListener("click", function () {
     let msg = JSON.stringify({"type": "redSwitch", })
     conn.send()
-})
+});
 
 let loginSuccess = function(evt) {
     if (evt.data === "Success") {
@@ -44,7 +44,6 @@ let loginSuccess = function(evt) {
         loginUI.classList.add("isHidden");
         let teamUI = document.querySelector("section#teamsUI");
         teamUI.classList.remove("isHidden");
-
     }
 };
 

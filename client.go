@@ -48,12 +48,6 @@ type Client struct {
 	// Buffered channel of outbound messages.
 	send chan []byte
 
-	user User
-}
-
-type User struct {
-	room string
-	password string
 	username string
 }
 
@@ -98,26 +92,8 @@ func (c *Client) readPump() {
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		procMessage := c.processMessage(string(message))
-		c.user.username = procMessage["username"]
-
-		if procMessage["type"] == "joinRoom" {
-			if c.hub.rooms[procMessage["room"]] == 0  {
-				c.send <- []byte("RoomDoesNotExistError")
-				return
-			}
-		}
-		if procMessage["type"] == "createRoom" || procMessage["type"] == "joinRoom" {
-			c.hub.mu.Lock()
-			c.hub.rooms[procMessage["room"]] += 1
-			c.hub.mu.Unlock()
-			user := User{
-				room:     procMessage["room"],
-				password: procMessage["password"],
-				username: procMessage["username"],
-			}
-			c.user = user
-			c.hub.broadcast <- message
-		}
+		c.username = procMessage["username"]
+		c.hub.processMessage(procMessage, c)
 	}
 }
 
@@ -174,11 +150,7 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256), user: User{
-		room:     "",
-		password: "",
-		username: "",
-	}}
+	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256), username: ""}
 	client.hub.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in
