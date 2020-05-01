@@ -11,9 +11,11 @@
 .red {
     color: red;
     background-color: red;
+    width: 60%;
 }
 
 .blue {
     color: red;
     background-color: blue;
+    width: 65%;
 }

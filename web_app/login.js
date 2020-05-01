@@ -1,6 +1,7 @@
 let conn;
 let body = document.querySelector("body");
 let lastRoom, lastUsername, creator;
+let currentTeam = "red";
 
 function sendRoom(queryType) {
     let q = queryType;
@@ -32,25 +33,30 @@ function sendRoom(queryType) {
 
 document.querySelector(".createRoom").onsubmit = sendRoom("createRoom");
 document.querySelector(".joinRoom").onsubmit = sendRoom("joinRoom");
+document.querySelector(".red > button").addEventListener("click", function () {
+    let msg = JSON.stringify({"type": "redSwitch", })
+    conn.send()
+})
+
+let loginSuccess = function(evt) {
+    if (evt.data === "Success") {
+        let loginUI = document.querySelector("section#loginUI");
+        loginUI.classList.add("isHidden");
+        let teamUI = document.querySelector("section#teamsUI");
+        teamUI.classList.remove("isHidden");
+
+    }
+};
+
+
 
 if (window["WebSocket"]) {
     conn = new WebSocket("ws://" + document.location.host + "/ws");
     conn.onclose = function (evt) {
 
     };
-    conn.onmessage = function (evt) {
-        let div = document.createElement("div");
-        div.innerHTML = evt.data;
-        body.append(div);
-        if (evt.data == "Success") {
-            window.localStorage.setItem("username", lastUsername);
-            window.localStorage.setItem("room", lastRoom);
-            window.localStorage.setItem("creator", creator);
-            window.location.href = "teams.html"
-        }
-    };
+    conn.onmessage = loginSuccess
 } else {
-
     let item = document.createElement("div");
     item.innerHTML = "<b>Your browser does not support WebSockets.</b>";
     body.append(item);

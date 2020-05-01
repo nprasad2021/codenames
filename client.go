@@ -99,21 +99,21 @@ func (c *Client) readPump() {
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 		procMessage := c.processMessage(string(message))
 		if procMessage["type"] == "joinRoom" {
-			if ok, _ := c.hub.rooms[procMessage["room"]]; !ok {
+			if c.hub.rooms[procMessage["room"]] == 0  {
 				c.send <- []byte("RoomDoesNotExistError")
 				return
 			}
 		}
 		if procMessage["type"] == "createRoom" || procMessage["type"] == "joinRoom" {
-			c.hub.rooms[procMessage["room"]] = true
+			c.hub.mu.Lock()
+			c.hub.rooms[procMessage["room"]] += 1
+			c.hub.mu.Unlock()
 			user := User{
 				room:     procMessage["room"],
 				password: procMessage["password"],
 				username: procMessage["username"],
 			}
 			c.user = user
-			c.send <- []byte("Success")
-		} else {
 			c.hub.broadcast <- message
 		}
 	}

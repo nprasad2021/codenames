@@ -4,6 +4,17 @@
 
 package main
 
+import (
+	"log"
+	"sync"
+)
+
+func (h *Hub) addUser(room string, username string) {
+	h.mu.Lock()
+	h.rooms[room] = append(h.rooms[room], username)
+	h.mu.Unlock()
+}
+
 // Hub maintains the set of active clients and broadcasts messages to the
 // clients.
 type Hub struct {
@@ -19,7 +30,10 @@ type Hub struct {
 	// Unregister requests from clients.
 	unregister chan *Client
 
-	rooms map[string]bool
+	rooms map[string][]string
+	games map[string]Game
+
+	mu sync.Mutex
 }
 
 func newHub() *Hub {
@@ -28,7 +42,8 @@ func newHub() *Hub {
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		clients:    make(map[*Client]bool),
-		rooms: 		make(map[string]bool),
+		rooms: 		make(map[string][]string),
+		games:		make(map[string]Game),
 	}
 }
 
@@ -37,6 +52,7 @@ func (h *Hub) run() {
 		select {
 		case client := <-h.register:
 			h.clients[client] = true
+			log.Printf("number of clients: %v", len(h.clients))
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
