@@ -26,7 +26,6 @@ type Cell struct {
 
 type Game struct {
 	board   []Cell
-	players []Player
 
 	currentColor string
 	currentRole  string
@@ -102,13 +101,12 @@ func getColor(numLeft []int) int {
 	return -1
 }
 
-func MakeGame(words []string, players []Player) *Game {
+func MakeGame(words []string) *Game {
 	if len(words) != 25 {
 		log.Fatalf("Expect 25 words")
 	}
 	game := &Game{}
 	game.board = []Cell{}
-	game.players = players
 	game.currentColor = RED
 	game.currentRole = SPYMASTER
 

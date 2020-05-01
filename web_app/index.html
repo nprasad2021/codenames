@@ -7,58 +7,43 @@
 </head>
 <body>
 <section id="loginUI">
-    <section class="login" id="joinLogin">
-        <h2>Join an existing room</h2>
-        <form action="" class="joinRoom">
-            <label>
-                Username
-                <input type="text" name="user">
-            </label>
-            <label>
-                Room Name:
-                <input type="text" name="room">
-            </label>
-            <label>
-                Password:
-                <input type="password" name="password">
-            </label>
-            <input type="submit" value="Submit">
-        </form>
-    </section>
-    <section class="login" id="createLogin">
-        <h2>Create your own room</h2>
-        <form action="" class="createRoom">
-            <label>
-                Username
-                <input type="text" name="user">
-            </label>
-            <label>
-                Room Name:
-                <input type="text" name="room">
-            </label>
-            <label>
-                Password:
-                <input type="password" name="password">
-            </label>
-            <input type="submit" value="Submit">
-        </form>
-    </section>
+    <label>
+        Username
+        <input type="text" name="user">
+    </label>
+    <label>
+        Room Name:
+        <input type="text" name="room">
+    </label>
+    <form action="" class="joinRoom">
+        <input type="submit" value="Join a room">
+    </form>
+    <form action="" class="createRoom">
+        <input type="submit" value="Create a room">
+    </form>
+    <div>
+
+    </div>
 </section>
+<section class="isHidden" id="participantsUI">
 
+    <ul>
+
+    </ul>
+    <button id="approveParts" class="isHidden">Ok</button>
+</section>
 <section class="isHidden" id="teamsUI">
-    <section class="teams">
-        <section class="red">
-            <div>
+    <section class="red">
+        <div>
 
-            </div>
-            <button>Red Team</button>
-        </section>
-        <section class="blue">
-            <div>
+        </div>
+        <button>Red Team</button>
+    </section>
+    <section class="blue">
+        <div>
 
-            </div>
-            <button>Blue Team</button>
-        </section>
+        </div>
+        <button>Blue Team</button>
     </section>
 
     <button class="isHidden">Play</button>
