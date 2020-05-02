@@ -37,85 +37,92 @@
         <div class="loginError"></div>
     </section>
 </section>
+<section class="isHidden" id="">
+    <section id="mainGameScreen">
+        <section class="isHidden" id="participantsUI">
 
-<section class="isHidden" id="participantsUI">
-
-    <ul>
-
-    </ul>
-    <button id="approveParts" class="isHidden">Start game</button>
-</section>
-<section class="isHidden" id="teamsUI">
-    <section id="teams">
-        <section class="rTeam">
             <ul>
 
             </ul>
+            <button id="approveParts" class="isHidden">Start game</button>
         </section>
-        <section class="bTeam">
-            <ul>
+        <section class="isHidden" id="teamsUI">
+            <section id="teams">
+                <section class="rTeam">
+                    <ul>
 
-            </ul>
+                    </ul>
+                </section>
+                <section class="bTeam">
+                    <ul>
+
+                    </ul>
+                </section>
+            </section>
+
+            <label>
+                Team:
+                <select id="selectTeam">
+                    <option value="RED">Red</option>
+                    <option value="BLUE">Blue</option>
+                </select>
+            </label>
+            <label>
+                Role:
+                <select id="selectRole">
+                    <option value="SPYMASTER">Spymaster</option>
+                    <option value="GUESSER">Guesser</option>
+                </select>
+            </label>
+            <div>
+
+            </div>
+            <button class="isHidden">Play</button>
+        </section>
+        <section class="isHidden" id="gameUI">
+            <section id="personalCredentials">
+
+            </section>
+            <section id="currentTurn">
+
+            </section>
+
+            <section id="guessTools">
+                <div id="wordEntry">
+
+                </div>
+                <div id="freqEntry">
+
+                </div>
+                <button id="passBtn">Pass</button>
+            </section>
+            <section id="spyTools">
+                <label>
+                    Clue:
+                    <input type="text" id="clue">
+                </label>
+                <label>
+                    Number of words:
+                    <select id="numWords">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                    </select>
+                </label>
+                <button id="submitClue">Submit</button>
+            </section>
+            <div id="victory"></div>
+            <section class="board" id="boardUI"></section>
         </section>
     </section>
-
-    <label>
-        Team:
-        <select id="selectTeam">
-            <option value="RED">Red</option>
-            <option value="BLUE">Blue</option>
-        </select>
-    </label>
-    <label>
-        Role:
-        <select id="selectRole">
-            <option value="SPYMASTER">Spymaster</option>
-            <option value="GUESSER">Guesser</option>
-        </select>
-    </label>
-    <div>
-
-    </div>
-    <button class="isHidden">Play</button>
-</section>
-<section class="isHidden" id="gameUI">
-    <section id="personalCredentials">
-
-    </section>
-    <section id="currentTurn">
-
-    </section>
-
-    <section id="guessTools">
-        <div id="wordEntry">
-
-        </div>
-        <div id="freqEntry">
-
-        </div>
-        <button id="passBtn">Pass</button>
-    </section>
-    <section id="spyTools">
-        <label>
-            Clue:
-            <input type="text" id="clue">
-        </label>
-        <label>
-            Number of words:
-            <select id="numWords">
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-            </select>
-        </label>
-        <button id="submitClue">Submit</button>
-    </section>
-    <section class="board" id="boardUI">
+    <section id="chatWindow" class="chat">
     </section>
 </section>
+
+
 </body>
 </html>

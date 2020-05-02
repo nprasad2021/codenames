@@ -120,7 +120,7 @@ function submitClue() {
         "username": lastUsername,
         "room": lastRoom,
         "word": word,
-        "num": (freq + 1).toString(),
+        "num": freq.toString(),
     });
     console.log("submit msg", msg);
     conn.send(msg);
@@ -144,9 +144,11 @@ function renderGame(parts) {
     let gameEncoding = parts[1];
     let clickable = parts[2];
     let cR = parts[3].split(",")[0];
-    // let cT = parts[3].split(",")[1];
+    let cT = parts[3].split(",")[1];
     let spyTools = document.querySelector("#spyTools");
     let guessTools = document.querySelector("#guessTools");
+    let currentTurn = document.querySelector("#currentTurn");
+    currentTurn.innerHTML = "<b>Curren Turn:</b> ";
     let submitButton = document.querySelector("#submitClue");
     let passButton = document.querySelector("#passBtn");
     if (cR === "GUESSER") {
@@ -157,6 +159,7 @@ function renderGame(parts) {
         } else {
             passButton.classList.add("isHidden");
         }
+        currentTurn.innerHTML += "Guesser for ";
     } else {
         passButton.classList.add("isHidden");
         if (clickable === "0") {
@@ -165,6 +168,12 @@ function renderGame(parts) {
             spyTools.classList.remove("isHidden");
         }
         guessTools.classList.add("isHidden");
+        currentTurn.innerHTML += "Spymaster for ";
+    }
+    if (cT === "RED") {
+        currentTurn.innerHTML += "red";
+    } else {
+        currentTurn.innerHTML += "blue";
     }
 
     if (clickable === "1" && currentRole === "SPYMASTER") {
@@ -201,6 +210,26 @@ function renderGame(parts) {
 }
 
 /////////////////////////////////////////////////////////////////////////
+nextGameFn = function () {
+    if (!conn) {
+        return
+    }
+    let msg = JSON.stringify({
+        "type": "newGame",
+        "username": lastUsername,
+        "room": lastRoom,
+    });
+    conn.send(msg);
+};
+
+/////////////////////////////////////////////////////////////////////////
+
+let sections = ["#participantsUI", "#teamsUI", "#gameUI"];
+function clear() {
+    for (let s of sections) {
+        document.querySelector(s).classList.add("isHidden");
+    }
+}
 
 let connResponse = function (evt) {
     let data = evt.data;
@@ -220,6 +249,7 @@ let connResponse = function (evt) {
             let loginUI = document.querySelector("#homePage");
             loginUI.classList.remove("home");
             loginUI.classList.add("isHidden");
+            clear();
             let partUI = document.querySelector("#participantsUI");
             partUI.classList.remove("isHidden");
 
@@ -279,19 +309,35 @@ let connResponse = function (evt) {
         gameUI.classList.remove("isHidden");
         let parts = data.split(":");
         let credentials = document.querySelector("#personalCredentials");
-        credentials.innerHTML = "<b>" + lastUsername + "</b> playing <b>" + currentRole + "</b> for the <b>" + currentTeam + "</b>";
+        credentials.innerHTML = "Your (<b>" + lastUsername + "</b>) are playing <b>" + currentRole + "</b> for the <b>" + currentTeam + "</b>";
         renderGame(parts);
     } else if (data.includes("guessSetup")) {
         let parts = data.split(":");
         renderGame(parts);
         let word = parts[4].split(",")[0];
         let freq = parts[4].split(",")[1];
+        console.log(parts[4]);
         document.querySelector("#wordEntry").innerHTML = word;
         document.querySelector("#freqEntry").innerHTML = freq;
     } else if (data.includes("spySetup")) {
         let parts = data.split(":");
         renderGame(parts);
     } else if (data.includes("victory")) {
+        let parts = data.split(":");
+        renderGame(parts);
+
+        let victoryDiv = document.querySelector("#currentTurn");
+        let p = document.createElement("p");
+        p.innerHTML = "Victory for the <b>" + parts[4] + "</b> team";
+        victoryDiv.append(p);
+        if (creator) {
+            let nextGameBtn = document.createElement("button");
+            nextGameBtn.onclick = function () {
+
+            };
+            victoryDiv.append(nextGameBtn)
+        }
+
 
     }
 };
@@ -299,7 +345,7 @@ let connResponse = function (evt) {
 
 //////////////////////////////////////////////////////////////////
 
-function initialize() {
+function initializeGameDemo() {
     let gameEncoding = "rocker,RED,WHITE;rocker,WHITE,BLUE;rocker,NEUTRAL,WHITE;rocker,RED,WHITE;rocker,BLUE,WHITE;rocker,NEUTRAL,WHITE;rocker,WHITE,DEAD;rocker,WHITE,BLUE;rocker,BLUE,WHITE;rocker,RED,WHITE;rocker,NEUTRAL,WHITE;rocker,WHITE,NEUTRAL;rocker,RED,WHITE;rocker,BLUE,WHITE;rocker,RED,WHITE;rocker,BLUE,WHITE;rocker,RED,WHITE;rocker,NEUTRAL,WHITE;rocker,RED,WHITE;rocker,BLUE,WHITE;rocker,RED,WHITE;rocker,NEUTRAL,WHITE;rocker,NEUTRAL,WHITE;rocker,RED,WHITE;rocker,BLUE,WHITE";
     let cells = gameEncoding.split(";");
     let board = document.querySelector("#homePage > .board");
@@ -319,8 +365,7 @@ function initialize() {
     }
 }
 
-
-initialize();
+initializeGameDemo();
 
 
 //////////////////////////////////////////////////////////////////
