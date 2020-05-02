@@ -24,20 +24,22 @@ type Room struct {
 	game *Game
 }
 
-func (h *Hub) sendClientsGame(room *Room, messagePrefix string){
+func (h *Hub) sendClientsGame(room *Room){
 
 	for _, c := range room.clients {
 		if _, ok := h.clients[c]; ok {
 			role := ""
+			team := ""
 			for _, p := range room.players {
 				if p.username == c.username {
 					role = p.role
+					team = p.team
 				}
 			}
-			if role == "" {
+			if role == "" || team == "" {
 				log.Fatalf("player does not exist in records")
 			}
-			msg := messagePrefix + room.game.Render(role)
+			msg := room.game.Render(role, team)
 			log.Printf("sending message %v", msg)
 			c.send <- []byte(msg)
 		}
@@ -56,7 +58,7 @@ func (h *Hub) sendClients(clients []*Client, message string){
 func randomWords() []string {
 	words := []string{}
 	for i := 0; i < 25; i++ {
-		words = append(words, string(i))
+		words = append(words, "rocker")
 	}
 	return words
 }
@@ -159,25 +161,28 @@ func (h *Hub) processMessage(vars map[string]string, c *Client) {
 		h.sendClients(room.clients, msg)
 	} else if vars["type"] == "startGame" {
 		room := h.rooms[vars["room"]]
+		if !isPlayersComplete(room.players) {
+			return
+		}
 		if room.roomState != "ROLES" {
 			log.Fatalf("Impossible to start game")
 		}
 		room.roomState = "game"
-		msg := "initGame:"
-		h.sendClientsGame(room, msg)
+		h.sendClientsGame(room)
 	} else if vars["type"] == "spyMove" {
 		room := h.rooms[vars["room"]]
 		num, _ := strconv.ParseInt(vars["num"], 10, 8)
 		room.game.Spy(vars["word"], int(num))
-		msg := "transition"
-		h.sendClients(room.clients, msg)
+		h.sendClientsGame(room)
 	} else if vars["type"] == "guessMove" {
 		room := h.rooms[vars["room"]]
 		num, _ := strconv.ParseInt(vars["cell"], 10, 8)
 		room.game.Guess(int(num))
-		msg := "boardRender:"
-		msg += room.game.Render("GUESSER")
-		h.sendClients(room.clients, msg)
+		h.sendClientsGame(room)
+	} else if vars["type"] == "pass" {
+		room := h.rooms[vars["room"]]
+		room.game.transition()
+		h.sendClientsGame(room)
 	}
 }
 

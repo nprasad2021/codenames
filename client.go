@@ -58,6 +58,7 @@ func trim(str string) string{
 }
 
 func (c *Client) processMessage(message string) map[string]string {
+	log.Printf("message rev %v", message)
 	message = trim(message)
 	m := make(map[string]string)
 	parts := strings.Split(message, ",")

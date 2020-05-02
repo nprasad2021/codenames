@@ -10,8 +10,10 @@
 
 #board {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    grid-template-rows: repeat(5, 1fr);
+    grid-template-columns: repeat(5, 100px);
+    grid-template-rows: repeat(5, 100px);
+    column-gap: 10px;
+    row-gap: 10px;
 }
 
 .rTeam {
@@ -20,4 +22,48 @@
 
 .bTeam {
     color: blue;
+}
+
+.neutralText {
+    color: gray;
+}
+
+.neutralBackground {
+    background-color: gray;
+}
+
+.blueText {
+    color: blue;
+}
+
+.blueBackground {
+    background-color: blue;
+}
+
+.redText {
+    color: red;
+}
+
+.redBackground {
+    background-color: red;
+}
+
+.whiteText {
+    color: wheat;
+}
+
+.whiteBackground {
+    background-color: wheat;
+}
+
+.deadText {
+    color: black;
+}
+
+.deadBackground {
+    background-color: black;
+}
+
+#board > button {
+    border-radius: 12px;
 }
