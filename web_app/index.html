@@ -4,30 +4,40 @@
     <meta charset="UTF-8">
     <title>codenames</title>
     <link rel="stylesheet" href="game.css">
+    <script src="login.js" defer></script>
 </head>
 <body>
+<ul class="nav">
+    <li><a href="index.html" id="logo">Codenames</a></li>
+    <li style="float:right"><a href="https://github.com/nprasad2021/codenames">Github</a></li>
+</ul>
 <div class="err">
 
 </div>
-<section id="loginUI">
-    <label>
-        Username
-        <input type="text" name="user">
-    </label>
-    <label>
-        Room Name:
-        <input type="text" name="room">
-    </label>
-    <form action="" class="joinRoom">
-        <input type="submit" value="Join a room">
-    </form>
-    <form action="" class="createRoom">
-        <input type="submit" value="Create a room">
-    </form>
-    <div>
+<section id="homePage" class="home">
+    <section class="board">
 
-    </div>
+    </section>
+    <section id="loginUI">
+        <div>
+            <label>
+                <input type="text" name="user" placeholder="User Name">
+            </label>
+        </div>
+        <div>
+            <label>
+                <input type="text" name="room" placeholder="Room Name">
+            </label>
+        </div>
+        <div>
+            <button class="joinRoom">Join a room</button>
+            <button class="createRoom">Create a room</button>
+        </div>
+
+        <div class="loginError"></div>
+    </section>
 </section>
+
 <section class="isHidden" id="participantsUI">
 
     <ul>
@@ -104,10 +114,8 @@
         </label>
         <button id="submitClue">Submit</button>
     </section>
-    <section id="board">
-
+    <section class="board" id="boardUI">
     </section>
 </section>
 </body>
-<script src="login.js"></script>
 </html>

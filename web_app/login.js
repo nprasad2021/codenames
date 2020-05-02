@@ -30,8 +30,8 @@ function sendRoom(queryType) {
     }
 }
 
-document.querySelector(".createRoom").onsubmit = sendRoom("createRoom");
-document.querySelector(".joinRoom").onsubmit = sendRoom("joinRoom");
+document.querySelector(".createRoom").onclick = sendRoom("createRoom");
+document.querySelector(".joinRoom").onclick = sendRoom("joinRoom");
 
 /////////////////////////////////////////////////////////////////////////
 
@@ -104,7 +104,7 @@ function respondToButton(index) {
     conn.send(msg);
 }
 
-function submitClue(){
+function submitClue() {
     if (!conn) {
         return;
     }
@@ -120,13 +120,13 @@ function submitClue(){
         "username": lastUsername,
         "room": lastRoom,
         "word": word,
-        "num": (freq+1).toString(),
+        "num": (freq + 1).toString(),
     });
     console.log("submit msg", msg);
     conn.send(msg);
 }
 
-function passClue(){
+function passClue() {
     if (!conn) {
         return;
     }
@@ -152,14 +152,14 @@ function renderGame(parts) {
     if (cR === "GUESSER") {
         spyTools.classList.add("isHidden");
         guessTools.classList.remove("isHidden");
-        if (clickable === "1"){
+        if (clickable === "1") {
             passButton.classList.remove("isHidden");
         } else {
             passButton.classList.add("isHidden");
         }
     } else {
         passButton.classList.add("isHidden");
-        if (clickable === "0"){
+        if (clickable === "0") {
             spyTools.classList.add("isHidden");
         } else {
             spyTools.classList.remove("isHidden");
@@ -176,7 +176,7 @@ function renderGame(parts) {
     }
 
     let cells = gameEncoding.split(";");
-    let board = document.querySelector("#board");
+    let board = document.querySelector("#boardUI");
     board.innerHTML = "";
     for (let i = 0; i < cells.length; i++) {
         let tmpArr = cells[i].split(",");
@@ -208,16 +208,17 @@ let connResponse = function (evt) {
     if (data.includes("createRoom")) {
         let parts = data.split(":");
         if (parts[1] === "FAILURE") {
-            let errOutput = document.querySelector("#loginUI > div");
+            let errOutput = document.querySelector(".loginError");
             errOutput.innerHTML = parts[2]
         }
     }
     if (data.includes("joinRoom")) {
         if (data.includes("FAILURE")) {
-            let errOutput = document.querySelector("#loginUI > div");
+            let errOutput = document.querySelector(".loginError");
             errOutput.innerHTML = "ERROR with ROOM SELECTION"
         } else {
-            let loginUI = document.querySelector("#loginUI");
+            let loginUI = document.querySelector("#homePage");
+            loginUI.classList.remove("home");
             loginUI.classList.add("isHidden");
             let partUI = document.querySelector("#participantsUI");
             partUI.classList.remove("isHidden");
@@ -290,13 +291,40 @@ let connResponse = function (evt) {
     } else if (data.includes("spySetup")) {
         let parts = data.split(":");
         renderGame(parts);
-    } else if (data.includes("victory")){
+    } else if (data.includes("victory")) {
 
     }
 };
 
 
 //////////////////////////////////////////////////////////////////
+
+function initialize() {
+    let gameEncoding = "rocker,RED,WHITE;rocker,WHITE,BLUE;rocker,NEUTRAL,WHITE;rocker,RED,WHITE;rocker,BLUE,WHITE;rocker,NEUTRAL,WHITE;rocker,WHITE,DEAD;rocker,WHITE,BLUE;rocker,BLUE,WHITE;rocker,RED,WHITE;rocker,NEUTRAL,WHITE;rocker,WHITE,NEUTRAL;rocker,RED,WHITE;rocker,BLUE,WHITE;rocker,RED,WHITE;rocker,BLUE,WHITE;rocker,RED,WHITE;rocker,NEUTRAL,WHITE;rocker,RED,WHITE;rocker,BLUE,WHITE;rocker,RED,WHITE;rocker,NEUTRAL,WHITE;rocker,NEUTRAL,WHITE;rocker,RED,WHITE;rocker,BLUE,WHITE";
+    let cells = gameEncoding.split(";");
+    let board = document.querySelector("#homePage > .board");
+    board.innerHTML = "";
+    for (let i = 0; i < cells.length; i++) {
+        let tmpArr = cells[i].split(",");
+        let word = tmpArr[0];
+        let textColor = tmpArr[1].toLowerCase();
+        let backgroundColor = tmpArr[2].toLowerCase();
+
+        let cellBtn = document.createElement("button");
+        cellBtn.textContent = word;
+        cellBtn.classList.add(textColor + "Text");
+        cellBtn.classList.add(backgroundColor + "Background");
+        cellBtn.disabled = true;
+        board.append(cellBtn);
+    }
+}
+
+
+initialize();
+
+
+//////////////////////////////////////////////////////////////////
+
 let err = document.querySelector(".err");
 if (window["WebSocket"]) {
     conn = new WebSocket("ws://" + document.location.host + "/ws");
