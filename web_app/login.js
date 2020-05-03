@@ -1,7 +1,12 @@
 let conn;
 let lastRoom, lastUsername, creator;
+const CODEMASTER = "CODEMASTER";
+const GUESSER = "GUESSER";
+
 let currentTeam = "RED";
-let currentRole = "SPYMASTER";
+let currentRole = CODEMASTER;
+
+let lastSentMessageUser = "";
 
 function sendRoom(queryType) {
     let q = queryType;
@@ -12,16 +17,19 @@ function sendRoom(queryType) {
         if (!conn) {
             return false;
         }
-        if (!room || !name) {
+        if (!name) {
             return false;
         }
-        lastRoom = room.value;
+        if (queryType === "joinRoom" && !room) {
+            return false;
+        }
+
         lastUsername = name.value;
         creator = queryType !== "joinRoom";
 
         let msg = JSON.stringify({
             "type": q, "username": name.value,
-            "room": room.value
+            "room": room.value,
         });
         conn.send(msg);
         room.value = "";
@@ -29,43 +37,65 @@ function sendRoom(queryType) {
         return false;
     }
 }
+let createRoomButton = document.querySelector(".createRoom");
+createRoomButton.onclick = sendRoom("createRoom");
+let joinRoomButton = document.querySelector(".joinRoom");
+let roomButtons = document.querySelector("#roomBtns");
+document.querySelector("#join").onclick = sendRoom("joinRoom");
+document.querySelector("#cancel").onclick = function () {
+    document.querySelector("#roomName").classList.add("isHidden");
+    document.querySelector("#loginBtns").classList.remove("isHidden");
+    roomButtons.classList.add("isHidden");
+};
 
-document.querySelector(".createRoom").onclick = sendRoom("createRoom");
-document.querySelector(".joinRoom").onclick = sendRoom("joinRoom");
+joinRoomButton.onclick = function () {
+    document.querySelector("#roomName").classList.remove("isHidden");
+    document.querySelector("#loginBtns").classList.add("isHidden");
+    roomButtons.classList.remove("isHidden");
+};
+
 
 /////////////////////////////////////////////////////////////////////////
 
-let approveParts = document.querySelector("#approveParts");
-approveParts.addEventListener("click", function () {
-    let msg = JSON.stringify({
-        "type": "roleAssn",
-        "username": lastUsername,
-        "room": lastRoom,
-        "role": currentRole,
-        "team": currentTeam
-    });
-    console.log("msg send:", msg);
+let messageInput = document.querySelector(".messageInput");
+messageInput.addEventListener("keyup", function (evt) {
     if (!conn) {
-        console.log("connections does not exist");
+        return;
     }
-    conn.send(msg);
-    return false;
+    let textMsg = messageInput.value;
+    if (evt.key === "Enter" && textMsg !== "") {
+        messageInput.value = "";
+        let msg = JSON.stringify({
+            "type": "text",
+            "username": lastUsername,
+            "room": lastRoom,
+            "msg": textMsg,
+        });
+        conn.send(msg);
+    }
 });
 
 /////////////////////////////////////////////////////////////////////////
-let selectTeamButton = document.querySelector("#selectTeam");
-let selectRoleButton = document.querySelector("#selectRole");
 
-let selectButtonFn = function () {
-    let teamIndex = selectTeamButton.selectedIndex;
-    let roleIndex = selectRoleButton.selectedIndex;
+let roleButtons = document.querySelectorAll("#roleBtns > button");
+let teamButtons = document.querySelectorAll("#teamBtns > button");
+let roleButtonFn = function (evt) {
+    if (evt.target.classList.contains("deadBackground")) {
+        return;
+    }
+    for (let b of roleButtons) {
+        b.classList.remove("deadBackground");
+        b.classList.remove("whiteText");
+    }
+    evt.target.classList.add("deadBackground");
+    evt.target.classList.add("whiteText");
 
     let msg = JSON.stringify({
         "type": "roleAssn",
         "username": lastUsername,
         "room": lastRoom,
-        "role": selectRoleButton.options[roleIndex].value,
-        "team": selectTeamButton.options[teamIndex].value,
+        "role": evt.target.value,
+        "team": currentTeam,
     });
     if (!conn) {
         return;
@@ -73,10 +103,42 @@ let selectButtonFn = function () {
     conn.send(msg);
 };
 
-selectTeamButton.addEventListener("change", selectButtonFn);
-selectRoleButton.addEventListener("change", selectButtonFn);
+let teamButtonFn = function (evt) {
+    if (evt.target.classList.contains("whiteText")) {
+        return;
+    }
+    for (let b of teamButtons) {
+        b.classList.remove("redBackground");
+        b.classList.remove("blueBackground");
+        b.classList.remove("whiteText");
+    }
+
+    evt.target.classList.add(evt.target.value.toLowerCase() + "Background");
+    evt.target.classList.add("whiteText");
+
+    let msg = JSON.stringify({
+        "type": "roleAssn",
+        "username": lastUsername,
+        "room": lastRoom,
+        "role": currentRole,
+        "team": evt.target.value,
+    });
+    if (!conn) {
+        return;
+    }
+    conn.send(msg);
+
+};
+
+for (let b of roleButtons) {
+    b.onclick = roleButtonFn;
+}
+
+for (let b of teamButtons) {
+    b.onclick = teamButtonFn;
+}
 /////////////////////////////////////////////////////////////////////////
-let startGameButton = document.querySelector("#teamsUI > button");
+let startGameButton = document.querySelector("#startGameButton");
 startGameButton.addEventListener("click", function () {
     if (!conn) {
         return;
@@ -88,6 +150,21 @@ startGameButton.addEventListener("click", function () {
     });
     conn.send(msg);
 });
+
+/////////////////////////////////////////////////////////////////////////
+let newGameProp = document.querySelector(".newGame");
+newGameProp.onclick = function () {
+    if (!conn) {
+        return;
+    }
+    let msg = JSON.stringify({
+        "type": "newGame",
+        "username": lastUsername,
+        "room": lastRoom,
+    });
+    conn.send(msg);
+};
+
 
 /////////////////////////////////////////////////////////////////////////
 function respondToButton(index) {
@@ -140,53 +217,44 @@ function passClue() {
     conn.send(msg);
 }
 
-function renderGame(parts) {
-    let gameEncoding = parts[1];
-    let clickable = parts[2];
+function renderScore(parts) {
+    let numBlueClicked = parts[4].split(",")[1];
+    let numRedClicked = parts[4].split(",")[0];
+
+    document.querySelector("#numBlueClicked").innerHTML = numBlueClicked;
+    document.querySelector("#numRedClicked").innerHTML = numRedClicked;
+}
+
+function renderUsernameHeading(parts) {
     let cR = parts[3].split(",")[0];
     let cT = parts[3].split(",")[1];
-    let spyTools = document.querySelector("#spyTools");
-    let guessTools = document.querySelector("#guessTools");
-    let currentTurn = document.querySelector("#currentTurn");
-    currentTurn.innerHTML = "<b>Curren Turn:</b> ";
-    let submitButton = document.querySelector("#submitClue");
-    let passButton = document.querySelector("#passBtn");
-    if (cR === "GUESSER") {
-        spyTools.classList.add("isHidden");
-        guessTools.classList.remove("isHidden");
-        if (clickable === "1") {
-            passButton.classList.remove("isHidden");
+    let usernameHeading = document.querySelector(".usernameHeading");
+    let userClass = currentTeam.toLowerCase() + "Text";
+    let userClassSpan = '<span class="' + userClass + '">' + currentTeam.toLowerCase() + '</span>';
+    usernameHeading.innerHTML = lastUsername + ', you are the ' + userClassSpan + " " + currentRole.toLowerCase() + ". ";
+    if (parts[0].includes("victory")) {
+        let victor = parts[5];
+        if (victor === currentTeam) {
+            usernameHeading.innerHTML += "You won!";
         } else {
-            passButton.classList.add("isHidden");
+            usernameHeading.innerHTML += "You lost!";
         }
-        currentTurn.innerHTML += "Guesser for ";
     } else {
-        passButton.classList.add("isHidden");
-        if (clickable === "0") {
-            spyTools.classList.add("isHidden");
+        let appendAnnounce = "";
+        if (cR === currentRole && cT === currentTeam) {
+            appendAnnounce = "It's your turn!"
         } else {
-            spyTools.classList.remove("isHidden");
+            let otherClass = cT.toLowerCase() + "Text";
+            let otherClassSpan = '<span class="' + otherClass + '">' + cT.toLowerCase() + '</span>';
+            appendAnnounce = "Waiting for the " + otherClassSpan + " " + cR.toLowerCase() + "."
         }
-        guessTools.classList.add("isHidden");
-        currentTurn.innerHTML += "Spymaster for ";
-    }
-    if (cT === "RED") {
-        currentTurn.innerHTML += "red";
-    } else {
-        currentTurn.innerHTML += "blue";
+        usernameHeading.innerHTML += appendAnnounce;
     }
 
-    if (clickable === "1" && currentRole === "SPYMASTER") {
-        submitButton.onclick = submitClue;
-    }
+}
 
-    if (clickable === "1" && currentRole === "GUESSER") {
-        passButton.onclick = passClue;
-    }
-
-    let cells = gameEncoding.split(";");
-    let board = document.querySelector("#boardUI");
-    board.innerHTML = "";
+function populateBoard(board, cells, clickable) {
+    console.log("clickable: ", clickable);
     for (let i = 0; i < cells.length; i++) {
         let tmpArr = cells[i].split(",");
         let word = tmpArr[0];
@@ -197,7 +265,7 @@ function renderGame(parts) {
         cellBtn.textContent = word;
         cellBtn.classList.add(textColor + "Text");
         cellBtn.classList.add(backgroundColor + "Background");
-        if (clickable === "1" && currentRole !== "SPYMASTER") {
+        if (clickable === "1" && currentRole === GUESSER) {
             cellBtn.onclick = function () {
                 respondToButton(i);
             };
@@ -207,6 +275,68 @@ function renderGame(parts) {
 
         board.append(cellBtn);
     }
+}
+
+function renderGame(parts) {
+    let gameEncoding = parts[1];
+    let clickable = parts[2];
+
+    renderScore(parts);
+    renderUsernameHeading(parts);
+
+    let spyTools = document.querySelector("#spyTools");
+    let guessTools = document.querySelector("#guessTools");
+    let submitButton = document.querySelector("#submitClue");
+    let passButton = document.querySelector("#passBtn");
+    let newGameButton = document.querySelector("#new-game-container");
+    newGameButton.classList.add("isHidden");
+    let cR = parts[3].split(",")[0];
+    if (parts[0] === "victory") {
+        spyTools.classList.add("isHidden");
+        guessTools.classList.add("isHidden");
+        guessTools.classList.remove("guessTools");
+        newGameButton.classList.remove("isHidden");
+    } else if (cR === GUESSER) {
+
+        spyTools.classList.add("isHidden");
+        guessTools.classList.remove("isHidden");
+        guessTools.classList.add(".guessTools");
+        if (clickable === "1") {
+            passButton.classList.remove("isHidden");
+            passButton.classList.add("gameButton");
+        } else {
+            passButton.classList.add("isHidden");
+            passButton.classList.remove("gameButton");
+        }
+    } else if (cR === CODEMASTER) {
+        guessTools.classList.add("isHidden");
+        guessTools.classList.remove("guessTools");
+        if (clickable === "0") {
+            spyTools.classList.add("isHidden");
+        } else {
+            spyTools.classList.remove("isHidden");
+        }
+
+    }
+
+    if (clickable === "1" && currentRole === CODEMASTER) {
+        submitButton.onclick = submitClue;
+    } else {
+        submitButton.onclick = function () {
+        };
+    }
+
+    if (clickable === "1" && currentRole === GUESSER) {
+        passButton.onclick = passClue;
+    } else {
+        passButton.onclick = function () {
+        };
+    }
+
+    let cells = gameEncoding.split(";");
+    let board = document.querySelector("#boardUI");
+    board.innerHTML = "";
+    populateBoard(board, cells, clickable);
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -224,121 +354,206 @@ nextGameFn = function () {
 
 /////////////////////////////////////////////////////////////////////////
 
-let sections = ["#participantsUI", "#teamsUI", "#gameUI"];
+let sectionsRelevant = ["#teamsUI", "#gameUI"];
+
 function clear() {
-    for (let s of sections) {
+    for (let s of sectionsRelevant) {
         document.querySelector(s).classList.add("isHidden");
     }
 }
 
+let createRoomResponse = function (data) {
+    let parts = data.split(":");
+    if (parts[1] === "FAILURE") {
+        let errOutput = document.querySelector(".loginError");
+        errOutput.innerHTML = parts[2]
+    }
+};
+
+let roleAssnResponse = function (data) {
+
+    let parts = data.split(":");
+    lastRoom = parts[1];
+
+    let loginUI = document.querySelector("#homePage");
+    loginUI.classList.remove("block-container");
+    loginUI.classList.add("isHidden");
+    clear();
+    let mainScreen = document.querySelector("#mainScreen");
+    mainScreen.classList.remove("isHidden");
+    mainScreen.classList.add('block-container');
+    let usernameHeading = document.querySelector(".usernameHeading");
+    usernameHeading.innerHTML = "Welcome " + lastUsername + "!";
+    usernameHeading.innerHTML += " The game join code is " + lastRoom;
+    let messageHeader = document.querySelector(".messageHeader");
+    messageHeader.innerHTML = "game code: " + lastRoom;
+    let teamsUI = document.querySelector("#teamsUI");
+    teamsUI.classList.remove("isHidden");
+    let codeHead = teamsUI.querySelector(".codemaster > ul");
+    let guessHead = teamsUI.querySelector(".guesser > ul");
+    codeHead.innerHTML = "";
+    guessHead.innerHTML = "";
+
+    let players = data.split(":")[2].split(";");
+    console.log(players);
+    for (let p of players) {
+        let meta = p.split(",");
+        let un = meta[0];
+        let rl = meta[1];
+        let tm = meta[2];
+
+        if (un === lastUsername) {
+            currentTeam = tm;
+            currentRole = rl;
+        }
+        let col = guessHead;
+        if (rl === CODEMASTER) {
+            col = codeHead
+        }
+        let userClass = tm.toLowerCase() + "Text";
+        let prepend = '<span class="' + userClass + '">' + un + '</span>';
+        liEl = document.createElement("li");
+        liEl.innerHTML = prepend;
+        col.append(liEl);
+    }
+    let respOutput = document.querySelector("#respOutput");
+    let proceedIfComplete = data.split(":")[3];
+    if (proceedIfComplete.includes("APPROVE") && creator) {
+        startGameButton.classList.remove("isHidden");
+        respOutput.classList.add("isHidden");
+        respOutput.classList.remove("loginError");
+    } else {
+        startGameButton.classList.add("isHidden");
+        respOutput.innerHTML = "";
+        respOutput.classList.remove("isHidden");
+        respOutput.classList.add("loginError");
+        let err = proceedIfComplete.split(",")[1];
+        if (proceedIfComplete.includes("APPROVE")) {
+            respOutput.innerHTML = "Waiting for " + err + " to approve..."
+        } else {
+            respOutput.innerHTML = err;
+        }
+
+    }
+
+};
+
+let initGameResponse = function (data) {
+    let teamsUI = document.querySelector("#teamsUI");
+    teamsUI.classList.add("isHidden");
+    let gameUI = document.querySelector("#gameUI");
+    gameUI.classList.remove("isHidden");
+    let parts = data.split(":");
+    // let credentials = document.querySelector("#personalCredentials");
+    // credentials.innerHTML = "You are the <b>" + currentTeam.toLowerCase() + "</b> <b>" + currentRole.toLowerCase() + "</b>";
+    renderGame(parts);
+};
+
+
+let guessSetupResponse = function (data) {
+    let parts = data.split(":");
+    renderGame(parts);
+    let word = parts[6].split(",")[0];
+    let freq = parts[6].split(",")[1];
+    console.log(parts[6]);
+    let cT = parts[3].split(",")[1];
+
+    let prepend = "";
+    let freqPrepend = "";
+    if (cT === currentTeam) {
+        prepend = "Your clue is ";
+        freqPrepend = "You have ";
+    } else {
+        let userClass = cT.toLowerCase() + "Text";
+        let userClassSpan = '<span class="' + userClass + '">' + cT.toLowerCase() + '</span>';
+        prepend = "The " + userClassSpan + " team's clue is ";
+        freqPrepend = "They have ";
+    }
+    let wordSpan = '<span class="bolder">' + word + '</span>';
+    let freqSpan = '<span class="bolder">' + freq + '</span>';
+    let wordEntryMod = document.querySelector("#wordEntry");
+    wordEntryMod.innerHTML = prepend + wordSpan + ". ";
+    wordEntryMod.innerHTML += freqPrepend + freqSpan + " guesses.";
+};
+
+let victoryResponse = function (data) {
+    let parts = data.split(":");
+    renderGame(parts);
+
+    let victoryDiv = document.querySelector("#currentTurn");
+    let p = document.createElement("p");
+    p.innerHTML = "Victory for the <b>" + parts[4] + "</b> team";
+    victoryDiv.append(p);
+    if (creator) {
+        let nextGameBtn = document.createElement("button");
+        nextGameBtn.onclick = function () {
+
+        };
+        victoryDiv.append(nextGameBtn)
+    }
+};
+
+let textResponse = function (data) {
+    let parts = data.split(":");
+    let username = parts[1];
+    let textContent = parts[2];
+    let msgPane = document.querySelector(".messagePane");
+    console.log("msg:", msgPane.scrollHeight, msgPane.clientHeight, msgPane.scrollHeight - msgPane.clientHeight);
+    let adjust = true;
+    if (msgPane.scrollHeight - msgPane.clientHeight !== msgPane.scrollTop) {
+        adjust = false;
+    }
+    let containerElement = document.createElement("div");
+    if (lastSentMessageUser !== username) {
+        let nameElement = document.createElement("div");
+        nameElement.classList.add("sentName");
+        nameElement.innerHTML = username;
+        containerElement.append(nameElement);
+    }
+    if (lastSentMessageUser !== username && lastSentMessageUser !== lastUsername) {
+        containerElement.classList.add("spaceMsg");
+    }
+    lastSentMessageUser = username;
+
+    let msgElement = document.createElement("div");
+    msgElement.classList.add("sentMsg");
+    msgElement.innerHTML = textContent;
+
+    containerElement.append(msgElement);
+    if (username === lastUsername) {
+        containerElement.classList.add("rightSide");
+        msgElement.classList.add("right");
+    } else {
+        containerElement.classList.add("leftSide");
+        msgElement.classList.add("left");
+    }
+
+    msgPane.append(containerElement);
+
+    if (adjust) {
+        msgPane.scrollTop = msgPane.scrollHeight - msgPane.clientHeight;
+    }
+
+};
+
 let connResponse = function (evt) {
     let data = evt.data;
     console.log(data);
-    if (data.includes("createRoom")) {
-        let parts = data.split(":");
-        if (parts[1] === "FAILURE") {
-            let errOutput = document.querySelector(".loginError");
-            errOutput.innerHTML = parts[2]
-        }
-    }
-    if (data.includes("joinRoom")) {
-        if (data.includes("FAILURE")) {
-            let errOutput = document.querySelector(".loginError");
-            errOutput.innerHTML = "ERROR with ROOM SELECTION"
-        } else {
-            let loginUI = document.querySelector("#homePage");
-            loginUI.classList.remove("home");
-            loginUI.classList.add("isHidden");
-            clear();
-            let partUI = document.querySelector("#participantsUI");
-            partUI.classList.remove("isHidden");
-
-            let names = data.split(":")[1].split(",");
-            let partList = partUI.querySelector("ul");
-
-            if (names.length >= 4 && creator && approveParts.classList.contains("isHidden")) {
-                approveParts.classList.remove("isHidden");
-            }
-            partList.innerHTML = "";
-            for (let name of names) {
-                let listItem = document.createElement("li");
-                listItem.innerText = name;
-                partList.append(listItem);
-            }
-        }
-    } else if (data.includes("roleAssn")) {
-        let partUI = document.querySelector("#participantsUI");
-        partUI.classList.add("isHidden");
-        let teamsUI = document.querySelector("#teamsUI");
-        teamsUI.classList.remove("isHidden");
-
-        let redTeam = teamsUI.querySelector(".rTeam > ul");
-        let blueTeam = teamsUI.querySelector(".bTeam > ul");
-        redTeam.innerHTML = "";
-        blueTeam.innerHTML = "";
-
-        let players = data.split(":")[1].split(";");
-        console.log(players);
-        for (let p of players) {
-            let meta = p.split(",");
-            let un = meta[0];
-            let rl = meta[1];
-            let tm = meta[2];
-
-            if (un === lastUsername) {
-                currentTeam = tm;
-                currentRole = rl;
-            }
-
-            if (tm === "BLUE") {
-                tm = blueTeam;
-            } else {
-                tm = redTeam;
-            }
-            liEl = document.createElement("li");
-            liEl.innerText = un + " " + rl;
-            tm.append(liEl);
-        }
-        if (data.split(":")[2] === "APPROVE" && creator) {
-            startGameButton.classList.remove("isHidden");
-        }
-    } else if (data.includes("initGame")) {
-        let teamsUI = document.querySelector("#teamsUI");
-        teamsUI.classList.add("isHidden");
-        let gameUI = document.querySelector("#gameUI");
-        gameUI.classList.remove("isHidden");
-        let parts = data.split(":");
-        let credentials = document.querySelector("#personalCredentials");
-        credentials.innerHTML = "Your (<b>" + lastUsername + "</b>) are playing <b>" + currentRole + "</b> for the <b>" + currentTeam + "</b>";
-        renderGame(parts);
-    } else if (data.includes("guessSetup")) {
-        let parts = data.split(":");
-        renderGame(parts);
-        let word = parts[4].split(",")[0];
-        let freq = parts[4].split(",")[1];
-        console.log(parts[4]);
-        document.querySelector("#wordEntry").innerHTML = word;
-        document.querySelector("#freqEntry").innerHTML = freq;
-    } else if (data.includes("spySetup")) {
-        let parts = data.split(":");
-        renderGame(parts);
-    } else if (data.includes("victory")) {
-        let parts = data.split(":");
-        renderGame(parts);
-
-        let victoryDiv = document.querySelector("#currentTurn");
-        let p = document.createElement("p");
-        p.innerHTML = "Victory for the <b>" + parts[4] + "</b> team";
-        victoryDiv.append(p);
-        if (creator) {
-            let nextGameBtn = document.createElement("button");
-            nextGameBtn.onclick = function () {
-
-            };
-            victoryDiv.append(nextGameBtn)
-        }
-
-
+    let keyWord = data.split(":")[0];
+    if (keyWord === "createRoom") {
+        createRoomResponse(data);
+    } else if (keyWord === "roleAssn") {
+        roleAssnResponse(data);
+    } else if (keyWord === "initGame") {
+        initGameResponse(data);
+    } else if (keyWord === "guessSetup") {
+        guessSetupResponse(data);
+    } else if (keyWord === "spySetup") {
+        renderGame(data.split(":"));
+    } else if (keyWord === "victory") {
+        victoryResponse(data);
+    } else if (keyWord === "text") {
+        textResponse(data);
     }
 };
 
@@ -346,23 +561,11 @@ let connResponse = function (evt) {
 //////////////////////////////////////////////////////////////////
 
 function initializeGameDemo() {
-    let gameEncoding = "rocker,RED,WHITE;rocker,WHITE,BLUE;rocker,NEUTRAL,WHITE;rocker,RED,WHITE;rocker,BLUE,WHITE;rocker,NEUTRAL,WHITE;rocker,WHITE,DEAD;rocker,WHITE,BLUE;rocker,BLUE,WHITE;rocker,RED,WHITE;rocker,NEUTRAL,WHITE;rocker,WHITE,NEUTRAL;rocker,RED,WHITE;rocker,BLUE,WHITE;rocker,RED,WHITE;rocker,BLUE,WHITE;rocker,RED,WHITE;rocker,NEUTRAL,WHITE;rocker,RED,WHITE;rocker,BLUE,WHITE;rocker,RED,WHITE;rocker,NEUTRAL,WHITE;rocker,NEUTRAL,WHITE;rocker,RED,WHITE;rocker,BLUE,WHITE";
+    let gameEncoding = "Teacher,BLUE,WHITE;Brush,BLUE,WHITE;Parachute,NEUTRAL,WHITE;Stock,NEUTRAL,WHITE;Cold,DEAD,WHITE;Watch,BLUE,WHITE;Pin,WHITE,NEUTRAL;Hook,WHITE,RED;Shakespeare,RED,WHITE;India,BLUE,WHITE;Pumpkin,RED,WHITE;Laser,WHITE,RED;Rock,NEUTRAL,WHITE;Belt,NEUTRAL,WHITE;Europe,WHITE,BLUE;Center,WHITE,RED;Lawyer,RED,WHITE;Pan,WHITE,BLUE;Press,RED,WHITE;Chocolate,NEUTRAL,WHITE;Giant,NEUTRAL,WHITE;Water,RED,WHITE;Pirate,RED,WHITE;Star,WHITE,BLUE;Cricket,WHITE,BLUE";
     let cells = gameEncoding.split(";");
     let board = document.querySelector("#homePage > .board");
     board.innerHTML = "";
-    for (let i = 0; i < cells.length; i++) {
-        let tmpArr = cells[i].split(",");
-        let word = tmpArr[0];
-        let textColor = tmpArr[1].toLowerCase();
-        let backgroundColor = tmpArr[2].toLowerCase();
-
-        let cellBtn = document.createElement("button");
-        cellBtn.textContent = word;
-        cellBtn.classList.add(textColor + "Text");
-        cellBtn.classList.add(backgroundColor + "Background");
-        cellBtn.disabled = true;
-        board.append(cellBtn);
-    }
+    populateBoard(board, cells, "0");
 }
 
 initializeGameDemo();
@@ -380,4 +583,3 @@ if (window["WebSocket"]) {
 } else {
     err.innerHTML = "<b>Your browser does not support WebSockets.</b>";
 }
-

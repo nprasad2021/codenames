@@ -3,18 +3,61 @@
 }
 body {
     font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif;
+    margin: 0;
+}
+h3 {
+    text-align: center;
 }
 #teams {
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr;
+    text-align: center;
 }
 
-.home {
+.usernameHeading {
+    display: block;
+    font-size: 12px;
+    font-weight: bolder;
+    background-color: white;
+    color: #20232a;
+    margin-top: 10px;
+    margin-left: 40px;
+    margin-bottom: 20px;
+}
+
+
+.block-container {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 3fr 2fr;
     grid-template-rows: 1fr;
+    margin-right: 10px;
+
+}
+
+.selectLabel {
+    display: block;
+    text-align: center;
+}
+
+.selectLabel > button {
+    display: inline-block;
+    font-size: 20px;
+    border-radius: 12px;
+}
+
+#startGameButton {
+    font-size: 24px;
+    border-radius: 12px;
+    color: #20232a;
+    background-color: #61dafb;
+    width: 100%;
+    text-align: center;
+}
+
+#homePage {
     margin-top: 25px;
+    padding: 0px;
 }
 
 #loginUI > div {
@@ -26,7 +69,7 @@ body {
     display: inline-block;
 }
 
-#loginUI > div > label > input {
+input {
     display: inline-block;
     font-size: 24px;
     width: 100%;
@@ -52,12 +95,21 @@ body {
     font-size: 14px;
 }
 
+#respOutput {
+    color: gray;
+    text-align: center;
+}
+
 .board {
     display: grid;
     grid-template-columns: repeat(5, 120px);
-    grid-template-rows: repeat(5, 75px);
+    grid-template-rows: repeat(5, 70px);
     column-gap: 10px;
     row-gap: 10px;
+}
+
+#homePage > .board {
+    margin-left: 25px;
 }
 
 .rTeam {
@@ -110,19 +162,22 @@ body {
 
 .board > button {
     border-radius: 12px;
-    font-weight: bold;
+    font-size: 16px;
 
 }
 
+.tmSelect {
+    list-style-type: none;
+}
+
+/*---------------------------------------------------*/
+/* Nav Bar Mechanics*/
 .nav {
     list-style-type: none;
     margin: 0;
     padding: 0;
     overflow: hidden;
     background-color: #20232a;
-/*    position: fixed;
-    top: 0;
-    width: 100%;*/
     box-shadow: 0 2px 6px 0 rgba(0,0,0,.12), inset 0 -1px 0 0 #dadce0;
 }
 
@@ -147,5 +202,146 @@ body {
 /* Change the link color to #111 (black) on hover */
 .nav > li a:hover {
     background-color: #111;
+}
+
+
+/*---------------------------------------------------*/
+/*Chat Window Mechanics*/
+
+.chat {
+    display: grid;
+    grid-template-columns: auto;
+    grid-template-rows: 25px 350px 40px;
+}
+
+div.sentName {
+    font-size: 10px;
+    padding: 1px 7px;
+}
+
+div.sentMsg {
+    font-size: 16px;
+    border-radius: 20px;
+    padding: 4px 7px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    display:inline-block;
+}
+
+.spaceMsg {
+    margin-top: 4px;
+}
+
+.right {
+    color: white;
+    background: linear-gradient(to bottom, #00D0EA 0%, #0085D1 100%);
+    margin-left: 25%;
+}
+
+.left {
+    color: black;
+    background-color: #eee;
+    margin-right: 25%;
+}
+
+div.rightSide {
+    text-align: right;
+}
+
+div.leftSide {
+    text-align: left;
+}
+
+.messageHeader {
+    font-size: 12px;
+    background-color: wheat;
+    color: black;
+    font-weight: bolder;
+    text-align: center;
+}
+
+.messagePane {
+    border: solid 2px #EEE;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    overflow: scroll;
+    max-height: 350px;
+    background-color: white;
+}
+/*Chat Window Mechanics*/
+/*---------------------------------------------------*/
+/*---------------------------------------------------*/
+/*Game UI*/
+#mainScreen {
+
+}
+
+#mainGameScreen {
+    margin-left: 25px;
+}
+#personalCredentials {
+    display: block;
+    color: black;
+    background-color: white;
+    text-align: center;
+    font-size: 24px;
+    padding: 4px;
+}
+#score {
+    display: flex;
+    justify-content: space-between;
+    margin-left: 5px;
+}
+#score > section {
+    display: inline;
+}
+
+.guessTools {
+    display: block;
+    margin-left: 5px;
+    margin-top: 25px;
+    text-align: center;
+}
+
+#spyTools {
+    justify-content: left;
+}
+
+#wordEntry, #freqEntry, .newGame {
+    display: inline-block;
+    font-size: 12px;
+    background-color: white;
+    color: #20232a;
+    margin: 10px;
+}
+
+.bolder {
+    font-weight: bolder;
+}
+
+.gameButton {
+    display: inline-block;
+    font-size: 10px;
+    padding: 10px;
+    font-weight: bolder;
+    border-radius: 12px;
+    background-color: #b9b4b4;
+    color: black;
+    margin-right: 25px;
+    margin-left: 20px;
+}
+
+#clue {
+    width: 200px;
+    margin-right: 25px;
+}
+
+select {
+    font-size: 24px;
+}
+
+#new-game-container {
+    justify-content: center;
 }
 

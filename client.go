@@ -76,8 +76,12 @@ func (c *Client) processMessage(message string) map[string]string {
 // reads from this goroutine.
 func (c *Client) readPump() {
 	defer func() {
-		c.hub.unregister <- c
 		c.conn.Close()
+		c.hub.mu.Lock()
+		if _, ok := c.hub.clients[c]; ok {
+			delete(c.hub.clients, c)
+		}
+		c.hub.mu.Unlock()
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
@@ -107,6 +111,11 @@ func (c *Client) writePump() {
 	defer func() {
 		ticker.Stop()
 		c.conn.Close()
+		c.hub.mu.Lock()
+		if _, ok := c.hub.clients[c]; ok {
+			delete(c.hub.clients, c)
+		}
+		c.hub.mu.Unlock()
 	}()
 	for {
 		select {
@@ -151,8 +160,7 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256), username: ""}
-	client.hub.register <- client
-
+	hub.clients[client] = true
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
 	go client.writePump()

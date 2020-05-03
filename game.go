@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"math/rand"
+	"strconv"
 )
 
 const (
@@ -12,8 +13,8 @@ const (
 	NEUTRAL = "NEUTRAL"
 	WHITE = "WHITE"
 
-	SPYMASTER = "SPYMASTER"
-	GUESSER   = "GUESSER"
+	CODEMASTER = "CODEMASTER"
+	GUESSER    = "GUESSER"
 )
 
 var COLORS = []string{RED, BLUE, NEUTRAL, DEAD}
@@ -37,10 +38,16 @@ type Game struct {
 
 	done bool
 	victor string
+
+	numRedClicked int
+	numBlueClicked int
 }
 
-func isPlayersComplete(players map[string]*Player) bool {
-	cs := []string{RED + SPYMASTER, BLUE + SPYMASTER, RED + GUESSER, BLUE + GUESSER}
+func isPlayersComplete(players map[string]*Player) (bool, string) {
+	if len(players) < 4 {
+		return false, "Waiting for at least four players to join..."
+	}
+	cs := []string{RED + CODEMASTER, BLUE + CODEMASTER, RED + GUESSER, BLUE + GUESSER}
 	combos := make(map[string]bool)
 	for _, p := range cs {
 		combos[p] = false
@@ -52,10 +59,10 @@ func isPlayersComplete(players map[string]*Player) bool {
 	}
 	for _, v := range combos {
 		if v == false {
-			return false
+			return false, "Waiting until all 4 role-team combinations have been assigned..."
 		}
 	}
-	return true
+	return true, ""
 
 }
 
@@ -68,7 +75,11 @@ func (gm *Game) Guess(cell int) {
 		log.Fatalf("invalid operation")
 	}
 	gm.board[cell].clicked = true
-
+	if gm.board[cell].color == BLUE {
+		gm.numBlueClicked += 1
+	} else if gm.board[cell].color == RED {
+		gm.numRedClicked += 1
+	}
 	gm.currentFreq -= 1
 	if gm.currentFreq == 0 || gm.board[cell].color != gm.currentColor {
 		gm.transition()
@@ -87,7 +98,7 @@ func (gm *Game) Spy(word string, num int) {
 	if gm.done {
 		return
 	}
-	if gm.currentRole != SPYMASTER {
+	if gm.currentRole != CODEMASTER {
 		log.Fatalf("Invalid Operation")
 	}
 	gm.currentWord = word
@@ -96,20 +107,10 @@ func (gm *Game) Spy(word string, num int) {
 }
 
 func (gm *Game) Victory() (bool, string){
-	numRed := 0
-	numBlue := 0
-	for _, cell := range gm.board {
-		if cell.clicked {
-			if cell.color == BLUE {
-				numBlue += 1
-			} else if cell.color == RED {
-				numRed += 1
-			}
-		}
-	}
-	if numRed == 9 {
+
+	if gm.numRedClicked == 9 {
 		return true, RED
-	} else if numBlue == 8 {
+	} else if gm.numBlueClicked == 8 {
 		return true, BLUE
 	}
 	return false, NEUTRAL
@@ -120,10 +121,10 @@ func (gm *Game) Render(role string, team string) string {
 	render := ""
 	if gm.done {
 		render = "victory:"
-		role = SPYMASTER
+		role = CODEMASTER
 	} else if gm.numTurns == 0 {
 		render = "initGame:"
-	} else if gm.currentRole == SPYMASTER {
+	} else if gm.currentRole == CODEMASTER {
 		render = "spySetup:"
 	} else {
 		render = "guessSetup:"
@@ -150,21 +151,25 @@ func (gm *Game) Render(role string, team string) string {
 		render += ":0"
 	}
 	render += ":" + gm.currentRole + "," + gm.currentColor
-	if gm.currentRole == GUESSER {
-		render += ":" + gm.currentWord + "," + string(gm.currentFreq)
-	}
+	render += ":" + strconv.Itoa(gm.numRedClicked) + "," + strconv.Itoa(gm.numBlueClicked)
 	if gm.done {
 		render += ":" + gm.victor
+	} else {
+		render += ":none"
 	}
+	if gm.currentRole == GUESSER {
+		render += ":" + gm.currentWord + "," + strconv.Itoa(gm.currentFreq)
+	}
+
 	return render
 }
 
 func (gm *Game) transition() {
 	gm.numTurns += 1
-	if gm.currentRole == SPYMASTER {
+	if gm.currentRole == CODEMASTER {
 		gm.currentRole = GUESSER
 	} else {
-		gm.currentRole = SPYMASTER
+		gm.currentRole = CODEMASTER
 		if gm.currentColor == RED {
 			gm.currentColor = BLUE
 		} else {
@@ -196,10 +201,13 @@ func MakeGame(words []string) *Game {
 	game := &Game{}
 	game.board = []*Cell{}
 	game.currentColor = RED
-	game.currentRole = SPYMASTER
+	game.currentRole = CODEMASTER
 	game.numTurns = 0
 	game.done = false
 	game.victor = ""
+	game.numRedClicked = 0
+	game.numBlueClicked = 0
+
 	numLeft := []int{9, 8, 7, 1}
 
 	for i := 0; i < len(words); i++ {

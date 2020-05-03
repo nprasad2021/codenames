@@ -11,10 +11,8 @@
     <li><a href="index.html" id="logo">Codenames</a></li>
     <li style="float:right"><a href="https://github.com/nprasad2021/codenames">Github</a></li>
 </ul>
-<div class="err">
 
-</div>
-<section id="homePage" class="home">
+<section id="homePage" class="block-container">
     <section class="board">
 
     </section>
@@ -24,85 +22,73 @@
                 <input type="text" name="user" placeholder="User Name">
             </label>
         </div>
-        <div>
+        <div id="roomName" class="isHidden">
             <label>
-                <input type="text" name="room" placeholder="Room Name">
+                <input type="text" name="room" placeholder="Game Code">
             </label>
+
         </div>
-        <div>
+        <div id="loginBtns">
             <button class="joinRoom">Join a room</button>
             <button class="createRoom">Create a room</button>
+        </div>
+        <div id="roomBtns" class="isHidden">
+            <button id="join">
+                Join room
+            </button>
+            <button id="cancel">
+                x
+            </button>
         </div>
 
         <div class="loginError"></div>
     </section>
 </section>
-<section class="isHidden" id="">
+<section class="isHidden usernameHeading">
+
+</section>
+<section class="isHidden" id="mainScreen">
     <section id="mainGameScreen">
-        <section class="isHidden" id="participantsUI">
-
-            <ul>
-
-            </ul>
-            <button id="approveParts" class="isHidden">Start game</button>
-        </section>
         <section class="isHidden" id="teamsUI">
             <section id="teams">
-                <section class="rTeam">
-                    <ul>
-
-                    </ul>
+                <section class="codemaster">
+                    <h3>Codemasters</h3>
+                    <ul class="tmSelect"></ul>
                 </section>
-                <section class="bTeam">
-                    <ul>
-
-                    </ul>
+                <section class="guesser">
+                    <h3>Guesser</h3>
+                    <ul class="tmSelect"></ul>
                 </section>
             </section>
-
-            <label>
-                Team:
-                <select id="selectTeam">
-                    <option value="RED">Red</option>
-                    <option value="BLUE">Blue</option>
-                </select>
+            <label class="selectLabel" id="teamBtns">
+                <button value="RED" class="redBackground whiteText">Red</button>
+                <button value="BLUE">Blue</button>
             </label>
-            <label>
-                Role:
-                <select id="selectRole">
-                    <option value="SPYMASTER">Spymaster</option>
-                    <option value="GUESSER">Guesser</option>
-                </select>
+            <label class="selectLabel" id="roleBtns">
+                <button value="CODEMASTER" class="deadBackground whiteText">Codemaster</button>
+                <button value="GUESSER">Guesser</button>
             </label>
-            <div>
-
-            </div>
-            <button class="isHidden">Play</button>
+            <div class="isHidden" id="respOutput"></div>
+            <button class="isHidden" id="startGameButton">Play</button>
         </section>
         <section class="isHidden" id="gameUI">
-            <section id="personalCredentials">
-
-            </section>
-            <section id="currentTurn">
-
-            </section>
-
-            <section id="guessTools">
-                <div id="wordEntry">
-
-                </div>
-                <div id="freqEntry">
-
-                </div>
-                <button id="passBtn">Pass</button>
+            <div id="score">
+                <section id="scoreCard" style="float:left">
+                    <span id="numRedClicked" class="redText" style="font-size:20px"></span>
+                    -
+                    <span id="numBlueClicked" class="blueText" style="font-size:20px"></span>
+                </section>
+            </div>
+            <section class="board" id="boardUI"></section>
+            <section id="guessTools" class="guessTools">
+                <div id="wordEntry"></div>
+                <button id="passBtn" class="isHidden">Pass</button>
             </section>
             <section id="spyTools">
                 <label>
-                    Clue:
-                    <input type="text" id="clue">
+                    <input type="text" id="clue" placeholder="clue">
                 </label>
-                <label>
-                    Number of words:
+                <label class="select">
                     <select id="numWords">
                         <option value="1">1</option>
                         <option value="2">2</option>
@@ -113,16 +99,20 @@
                         <option value="7">7</option>
                     </select>
                 </label>
-                <button id="submitClue">Submit</button>
+                <button id="submitClue" class="gameButton">Submit Clue!</button>
             </section>
-            <div id="victory"></div>
-            <section class="board" id="boardUI"></section>
+            <section class="isHidden" id="new-game-container">
+                <button class="newGame">New game</button>
+            </section>
         </section>
     </section>
     <section id="chatWindow" class="chat">
+        <section class="messageHeader"></section>
+        <section class="messagePane"></section>
+        <input type="text" class="messageInput">
     </section>
 </section>
 
-
+<div class="err"></div>
 </body>
 </html>

@@ -14,6 +14,8 @@ type Player struct {
 	username string
 	team     string
 	role     string
+
+	creator bool
 }
 
 type Room struct {
@@ -21,6 +23,7 @@ type Room struct {
 	players map[string]*Player
 	roomState string
 
+	creator *Player
 	game *Game
 }
 
@@ -44,6 +47,7 @@ func (h *Hub) sendClientsGame(room *Room){
 			c.send <- []byte(msg)
 		} else {
 			delete(room.clients, c)
+			close(c.send)
 		}
 	}
 
@@ -56,16 +60,98 @@ func (h *Hub) sendClients(room *Room, message string){
 			c.send <- []byte(message)
 		} else {
 			delete(room.clients, c)
+			close(c.send)
 		}
 	}
 }
 
-func randomWords() []string {
-	words := []string{}
-	for i := 0; i < 25; i++ {
-		words = append(words, "rocker")
+func (h *Hub) createRoom(vars map[string]string, c*Client) bool{
+	roomCode := randomString(4)
+	ok := true
+	for ok == true {
+		roomCode = randomString(4)
+		_, ok = h.rooms[roomCode]
 	}
-	return words
+	room := &Room{
+		clients: make(map[*Client]bool),
+		players: make(map[string]*Player),
+		roomState: "PENDING",
+		game: MakeGame(h.words.choose(25)),
+	}
+	player := &Player{
+		username: vars["username"],
+		team:     RED,
+		role:     CODEMASTER,
+		creator:  true,
+	}
+	room.players[player.username] = player
+	room.creator = player
+	room.clients[c] = true
+	vars["room"] = roomCode
+	h.rooms[vars["room"]] = room
+	return true
+}
+func (h *Hub) joinRoom(vars map[string]string, c*Client) bool {
+	if _, ok := h.rooms[vars["room"]]; !ok {
+		c.send <- []byte("createRoom:FAILURE:Room does not exist")
+		return false
+	}
+	if h.rooms[vars["room"]].roomState != "PENDING"  {
+		c.send <- []byte("createRoom:FAILURE:Room is Closed")
+		return false
+	}
+	room := h.rooms[vars["room"]]
+	room.clients[c] = true
+	player := &Player{
+		username: vars["username"],
+		team:     RED,
+		role:     CODEMASTER,
+		creator:  false,
+	}
+	room.players[player.username] = player
+	return true
+}
+
+func (h *Hub) roleAssn(vars map[string]string) {
+	log.Printf("vars: %v", vars)
+	room := h.rooms[vars["room"]]
+	if room.roomState != "PENDING" {
+		return
+	}
+	player, ok := room.players[vars["username"]]
+	if !ok {
+		log.Fatalf("Player %v does not exist", vars["username"])
+	}
+	if val, ok := vars["role"]; ok {
+		player.role = val
+	}
+	if val, ok := vars["team"]; ok {
+		player.team = val
+	}
+
+	msg := "roleAssn:" + vars["room"] + ":"
+	for _, p := range room.players {
+		msg += p.username + "," + p.role + "," + p.team + ";"
+	}
+	msg = msg[:len(msg)-1]
+	if ok, err := isPlayersComplete(room.players); ok {
+		msg += ":APPROVE," + room.creator.username
+	} else {
+		msg += ":CONTINUE," + err
+	}
+	h.sendClients(room, msg)
+}
+
+func (h *Hub) startGame(vars map[string]string) {
+	room := h.rooms[vars["room"]]
+	if ok, _ := isPlayersComplete(room.players); !ok {
+		return
+	}
+	if room.roomState == "GAME"  {
+		log.Fatalf("Impossible to start game")
+	}
+	room.roomState = "GAME"
+	h.sendClientsGame(room)
 }
 
 
@@ -75,104 +161,17 @@ func (h *Hub) processMessage(vars map[string]string, c *Client) {
 	log.Printf("args: %v", vars)
 
 	if vars["type"] == "createRoom" {
-		if _, ok := h.rooms[vars["room"]]; ok {
-			c.send <- []byte("createRoom:FAILURE:RoomAlreadyExists")
-			return
+		if h.createRoom(vars, c) {
+			h.roleAssn(vars)
 		}
-		room := &Room{
-			clients: make(map[*Client]bool),
-			players: make(map[string]*Player),
-			roomState: "PENDING",
-			game: MakeGame(h.words.choose(25)),
-		}
-		player := &Player{
-			username: vars["username"],
-			team:     RED,
-			role:     SPYMASTER,
-		}
-		room.players[player.username] = player
-		room.clients[c] = true
-		h.rooms[vars["room"]] = room
-		msg := "joinRoom:"
-		for _, p := range room.players {
-			msg += p.username
-			msg += ","
-		}
-		msg = msg[:len(msg)-1]
-		h.sendClients(room, msg)
 	} else if vars["type"] == "joinRoom" {
-		if _, ok := h.rooms[vars["room"]]; !ok {
-			c.send <- []byte("joinRoom:FAILURE:RoomDoesNotExist")
-			return
+		if h.joinRoom(vars, c) {
+			h.roleAssn(vars)
 		}
-		if h.rooms[vars["room"]].roomState != "PENDING"  {
-			c.send <- []byte("joinRoom:FAILURE:RoomClosed")
-			return
-		}
-		room := h.rooms[vars["room"]]
-		room.clients[c] = true
-		player := &Player{
-			username: vars["username"],
-			team:     RED,
-			role:     SPYMASTER,
-		}
-		room.players[player.username] = player
-		h.rooms[vars["room"]] = room
-		log.Printf("players: %v", room.players)
-		msg := "joinRoom:"
-		for _, p := range room.players {
-			msg += p.username
-			msg += ","
-		}
-		msg = msg[:len(msg)-1]
-		h.sendClients(room, msg)
 	} else if vars["type"] == "roleAssn" {
-		log.Printf("vars: %v", vars)
-		room := h.rooms[vars["room"]]
-		if room.roomState != "PENDING" {
-			c.send <- []byte("roleAssn:FAILURE:roleAssnNotProcessed")
-			return
-		}
-		player := &Player{
-			username: "",
-			team:     "",
-			role:     "",
-		}
-		for _, p := range room.players {
-			if p.username == vars["username"] {
-				player = p
-				break
-			}
-		}
-		if player.username == "" {
-			log.Fatalf("player not found")
-		}
-		player.role = vars["role"]
-		player.team = vars["team"]
-
-		msg := "roleAssn:"
-		for _, p := range room.players {
-			msg += p.username + "," + p.role + "," + p.team + ";"
-		}
-		msg = msg[:len(msg)-1]
-		msg += ":"
-		if isPlayersComplete(room.players) {
-			msg += "APPROVE"
-		} else {
-			msg += "CONTINUE"
-		}
-
-		h.sendClients(room, msg)
+		h.roleAssn(vars)
 	} else if vars["type"] == "startGame" {
-		room := h.rooms[vars["room"]]
-		if !isPlayersComplete(room.players) {
-			return
-		}
-		if room.roomState == "GAME"  {
-			log.Fatalf("Impossible to start game")
-		}
-		room.roomState = "game"
-		h.sendClientsGame(room)
+		h.startGame(vars)
 	} else if vars["type"] == "spyMove" {
 		room := h.rooms[vars["room"]]
 		num, _ := strconv.ParseInt(vars["num"], 10, 8)
@@ -189,14 +188,15 @@ func (h *Hub) processMessage(vars map[string]string, c *Client) {
 		h.sendClientsGame(room)
 	} else if vars["type"] == "newGame" {
 		room := h.rooms[vars["room"]]
-		room.game = MakeGame(randomWords())
-		room.roomState = "PENDING"
-		msg := "joinRoom:"
-		for _, p := range room.players {
-			msg += p.username
-			msg += ","
+		if room.roomState != "GAME" {
+			return
 		}
-		msg = msg[:len(msg)-1]
+		room.game = MakeGame(h.words.choose(25))
+		room.roomState = "PENDING"
+		h.roleAssn(vars);
+	} else if vars["type"] == "text" {
+		room := h.rooms[vars["room"]]
+		msg := "text:" + vars["username"] + ":" + vars["msg"]
 		h.sendClients(room, msg)
 	}
 }
@@ -209,54 +209,15 @@ type Hub struct {
 	// Registered clients.
 	clients map[*Client]bool
 
-	// Inbound messages from the clients.
-	broadcast chan []byte
-
-	// Register requests from the clients.
-	register chan *Client
-
-	// Unregister requests from clients.
-	unregister chan *Client
-
 	rooms map[string]*Room
-	games map[string]*Game
-
 	words *Dict
-
 	mu sync.Mutex
 }
 
 func newHub() *Hub {
 	return &Hub{
-		broadcast:  make(chan []byte),
-		register:   make(chan *Client),
-		unregister: make(chan *Client),
 		clients:    make(map[*Client]bool),
 		rooms: 		make(map[string]*Room),
 		words:		MakeDict(),
-	}
-}
-
-func (h *Hub) run() {
-	for {
-		select {
-		case client := <-h.register:
-			h.clients[client] = true
-			log.Printf("number of clients: %v", len(h.clients))
-		case client := <-h.unregister:
-			if _, ok := h.clients[client]; ok {
-				delete(h.clients, client)
-				close(client.send)
-			}
-		case message := <-h.broadcast:
-			for client := range h.clients {
-				select {
-				case client.send <- message:
-				default:
-					close(client.send)
-					delete(h.clients, client)
-				}
-			}
-		}
 	}
 }

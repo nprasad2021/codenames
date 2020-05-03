@@ -6,10 +6,28 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"time"
 )
+
+const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+var seededRand = rand.New(
+	rand.NewSource(time.Now().UnixNano()))
 
 type Dict struct {
 	words []string
+}
+
+func StringWithCharset(length int, charset string) string {
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
+}
+
+func randomString(length int) string {
+	return StringWithCharset(length, charset)
 }
 
 func (d *Dict) choose(num int) []string {
