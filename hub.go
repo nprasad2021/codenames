@@ -8,6 +8,7 @@ import (
 	"log"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type Player struct {
@@ -25,7 +26,15 @@ type Room struct {
 
 	creator *Player
 	game *Game
+	timer time.Duration
 }
+
+const (
+	FAILURE = "FAILURE"
+	SUCCESS = "SUCCESS"
+
+	rejoinGAME = "rejoinGAME"
+)
 
 func (h *Hub) sendClientsGame(room *Room){
 
@@ -91,16 +100,20 @@ func (h *Hub) createRoom(vars map[string]string, c*Client) bool{
 	h.rooms[vars["room"]] = room
 	return true
 }
-func (h *Hub) joinRoom(vars map[string]string, c*Client) bool {
+func (h *Hub) joinRoom(vars map[string]string, c*Client) string {
 	if _, ok := h.rooms[vars["room"]]; !ok {
 		c.send <- []byte("createRoom:FAILURE:Room does not exist")
-		return false
-	}
-	if h.rooms[vars["room"]].roomState != "PENDING"  {
-		c.send <- []byte("createRoom:FAILURE:Room is Closed")
-		return false
+		return FAILURE
 	}
 	room := h.rooms[vars["room"]]
+	if room.roomState != "PENDING"  {
+		if _, ok := room.players[vars["username"]]; !ok {
+			c.send <- []byte("createRoom:FAILURE:Room is Closed")
+			return FAILURE
+		}
+		return rejoinGAME
+	}
+
 	room.clients[c] = true
 	player := &Player{
 		username: vars["username"],
@@ -109,7 +122,7 @@ func (h *Hub) joinRoom(vars map[string]string, c*Client) bool {
 		creator:  false,
 	}
 	room.players[player.username] = player
-	return true
+	return SUCCESS
 }
 
 func (h *Hub) roleAssn(vars map[string]string) {
@@ -165,8 +178,12 @@ func (h *Hub) processMessage(vars map[string]string, c *Client) {
 			h.roleAssn(vars)
 		}
 	} else if vars["type"] == "joinRoom" {
-		if h.joinRoom(vars, c) {
+		rType := h.joinRoom(vars, c)
+		if rType == SUCCESS {
 			h.roleAssn(vars)
+		} else if rType == rejoinGAME {
+			room := h.rooms[vars["room"]]
+			h.sendClientsGame(room)
 		}
 	} else if vars["type"] == "roleAssn" {
 		h.roleAssn(vars)
@@ -175,13 +192,17 @@ func (h *Hub) processMessage(vars map[string]string, c *Client) {
 	} else if vars["type"] == "spyMove" {
 		room := h.rooms[vars["room"]]
 		num, _ := strconv.ParseInt(vars["num"], 10, 8)
-		room.game.Spy(vars["word"], int(num))
-		h.sendClientsGame(room)
+		if room.game.Spy(vars["word"], int(num)) {
+			h.sendClientsGame(room)
+		}
+
 	} else if vars["type"] == "guessMove" {
 		room := h.rooms[vars["room"]]
 		num, _ := strconv.ParseInt(vars["cell"], 10, 8)
-		room.game.Guess(int(num))
-		h.sendClientsGame(room)
+		if room.game.Guess(int(num)) {
+			h.sendClientsGame(room)
+		}
+
 	} else if vars["type"] == "pass" {
 		room := h.rooms[vars["room"]]
 		room.game.transition()

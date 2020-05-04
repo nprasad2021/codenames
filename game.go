@@ -67,12 +67,12 @@ func isPlayersComplete(players map[string]*Player) (bool, string) {
 }
 
 // word;color;clicked;
-func (gm *Game) Guess(cell int) {
+func (gm *Game) Guess(cell int) bool {
 	if gm.done {
-		return
+		return true
 	}
 	if gm.currentRole != GUESSER || gm.currentFreq == 0 || gm.board[cell].clicked == true {
-		return
+		return false
 	}
 	gm.board[cell].clicked = true
 	if gm.board[cell].color == BLUE {
@@ -91,19 +91,21 @@ func (gm *Game) Guess(cell int) {
 		gm.done = true
 		gm.victor = victor
 	}
+	return true
 
 }
 
-func (gm *Game) Spy(word string, num int) {
+func (gm *Game) Spy(word string, num int) bool{
 	if gm.done {
-		return
+		return true
 	}
 	if gm.currentRole != CODEMASTER {
-		return
+		return false
 	}
 	gm.currentWord = word
 	gm.currentFreq = num + 1
 	gm.transition()
+	return true
 }
 
 func (gm *Game) Victory() (bool, string){

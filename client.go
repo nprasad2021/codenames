@@ -57,16 +57,25 @@ func trim(str string) string{
 	return str
 }
 
-func (c *Client) processMessage(message string) map[string]string {
+func (c *Client) processMessage(message string) (map[string]string, bool) {
 	log.Printf("message rev %v", message)
 	message = trim(message)
 	m := make(map[string]string)
 	parts := strings.Split(message, ",")
+	if len(parts) < 3 {
+		return m, false
+	}
 	for _, pair := range parts {
 		par := strings.Split(pair, ":")
+		if len(par) != 2 {
+			return m, false
+		}
+		if len(par[0]) < 2 || len(par[1]) < 2 {
+			return m, false
+		}
 		m[trim(par[0])] = trim(par[1])
 	}
-	return m
+	return m, true
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -95,9 +104,11 @@ func (c *Client) readPump() {
 			break
 		}
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		procMessage := c.processMessage(string(message))
-		c.username = procMessage["username"]
-		c.hub.processMessage(procMessage, c)
+		if procMessage, ok := c.processMessage(string(message)); ok {
+			c.username = procMessage["username"]
+			c.hub.processMessage(procMessage, c)
+		}
+
 	}
 }
 
