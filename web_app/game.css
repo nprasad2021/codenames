@@ -308,7 +308,7 @@ div.leftSide {
     justify-content: left;
 }
 
-#wordEntry, #freqEntry, .newGame {
+#wordEntry, #freqEntry {
     display: inline-block;
     font-size: 12px;
     background-color: white;

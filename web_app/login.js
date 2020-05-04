@@ -72,15 +72,17 @@ messageInput.addEventListener("keyup", function (evt) {
         return;
     }
     let textMsg = processInputElement(messageInput.value);
-    if (evt.key === "Enter" && textMsg !== "") {
+    if (evt.key === "Enter") {
         messageInput.value = "";
-        let msg = JSON.stringify({
-            "type": "text",
-            "username": lastUsername,
-            "room": lastRoom,
-            "msg": textMsg,
-        });
-        conn.send(msg);
+        if (textMsg !== ""){
+            let msg = JSON.stringify({
+                "type": "text",
+                "username": lastUsername,
+                "room": lastRoom,
+                "msg": textMsg,
+            });
+            conn.send(msg);
+        }
     }
 });
 
@@ -161,7 +163,7 @@ startGameButton.addEventListener("click", function () {
 });
 
 /////////////////////////////////////////////////////////////////////////
-let newGameProp = document.querySelector(".newGame");
+let newGameProp = document.querySelector("#newGameBtn");
 newGameProp.onclick = function () {
     if (!conn) {
         return;
