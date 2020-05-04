@@ -1,4 +1,4 @@
-module github.com/nprasad2021/go-getting-started
+module github.com/nprasad2021/codenames
 
 go 1.13
 
