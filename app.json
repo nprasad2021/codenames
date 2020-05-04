@@ -1,0 +1,10 @@
+{
+  "name": "Codenames on Heroku: Go",
+  "description": "Codenames App",
+  "keywords": [
+    "codenames",
+    "go"
+  ],
+  "website": "https://github.com/nprasad2021/codenames",
+  "repository": "https://git.heroku.com/codenames-web-online.git"
+}
