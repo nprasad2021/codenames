@@ -1,3 +1,4 @@
 CodeName, now online.
-Backend written in go.
-Front-end built from scratch.
+
+Live App hosted at go-bulls.herokuapp.com
+
