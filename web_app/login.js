@@ -21,7 +21,7 @@ function sendRoom(queryType) {
     return function () {
         let name = document.querySelector('input[name="user"]');
         let room = document.querySelector('input[name="room"]');
-
+        console.log(name.value, room.value, !conn);
         if (!conn) {
             return false;
         }
@@ -33,6 +33,7 @@ function sendRoom(queryType) {
         }
 
         lastUsername = processInputElement(name.value);
+        lastRoom = processInputElement(room.value);
         creator = queryType !== "joinRoom";
 
         let msg = JSON.stringify({
@@ -45,6 +46,7 @@ function sendRoom(queryType) {
         return false;
     }
 }
+
 let createRoomButton = document.querySelector(".createRoom");
 createRoomButton.onclick = sendRoom("createRoom");
 let joinRoomButton = document.querySelector(".joinRoom");
@@ -74,7 +76,7 @@ messageInput.addEventListener("keyup", function (evt) {
     let textMsg = processInputElement(messageInput.value);
     if (evt.key === "Enter") {
         messageInput.value = "";
-        if (textMsg !== ""){
+        if (textMsg !== "") {
             let msg = JSON.stringify({
                 "type": "text",
                 "username": lastUsername,
@@ -202,7 +204,8 @@ function submitClue() {
         return;
     }
     let word = processInputElement(clue.value);
-    if (word === ""){
+    clue.value = "";
+    if (word === "") {
         return;
     }
     let freq = document.querySelector("#numWords").selectedIndex + 1;
@@ -333,6 +336,7 @@ function renderGame(parts) {
         }
 
     }
+    console.log(spyTools.classList);
 
     if (clickable === "1" && currentRole === CODEMASTER) {
         submitButton.onclick = submitClue;
@@ -385,23 +389,28 @@ let createRoomResponse = function (data) {
     }
 };
 
+let initGameWindow = function () {
+    let loginUI = document.querySelector("#homePage");
+    loginUI.classList.remove("block-container");
+    loginUI.classList.add("isHidden");
+    let mainScreen = document.querySelector("#mainScreen");
+    mainScreen.classList.remove("isHidden");
+    mainScreen.classList.add('block-container');
+    let messageHeader = document.querySelector(".messageHeader");
+    messageHeader.innerHTML = "game code: " + lastRoom;
+};
+
 let roleAssnResponse = function (data) {
 
     let parts = data.split(":");
     lastRoom = parts[1];
-
-    let loginUI = document.querySelector("#homePage");
-    loginUI.classList.remove("block-container");
-    loginUI.classList.add("isHidden");
     clear();
-    let mainScreen = document.querySelector("#mainScreen");
-    mainScreen.classList.remove("isHidden");
-    mainScreen.classList.add('block-container');
+    initGameWindow();
+
     let usernameHeading = document.querySelector(".usernameHeading");
     usernameHeading.innerHTML = "Welcome " + lastUsername + "!";
     usernameHeading.innerHTML += " The game join code is " + lastRoom;
-    let messageHeader = document.querySelector(".messageHeader");
-    messageHeader.innerHTML = "game code: " + lastRoom;
+
     let teamsUI = document.querySelector("#teamsUI");
     teamsUI.classList.remove("isHidden");
     let codeHead = teamsUI.querySelector(".codemaster > ul");
@@ -433,7 +442,7 @@ let roleAssnResponse = function (data) {
     }
     let respOutput = document.querySelector("#respOutput");
     let proceedIfComplete = data.split(":")[3];
-    if (proceedIfComplete.includes("APPROVE") && creator) {
+    if (proceedIfComplete.includes("APPROVE")) {
         startGameButton.classList.remove("isHidden");
         respOutput.classList.add("isHidden");
         respOutput.classList.remove("loginError");
@@ -442,18 +451,13 @@ let roleAssnResponse = function (data) {
         respOutput.innerHTML = "";
         respOutput.classList.remove("isHidden");
         respOutput.classList.add("loginError");
-        let err = proceedIfComplete.split(",")[1];
-        if (proceedIfComplete.includes("APPROVE")) {
-            respOutput.innerHTML = "Waiting for " + err + " to approve..."
-        } else {
-            respOutput.innerHTML = err;
-        }
-
+        respOutput.innerHTML = proceedIfComplete.split(",")[1];
     }
 
 };
 
 let initGameResponse = function (data) {
+    initGameWindow();
     let teamsUI = document.querySelector("#teamsUI");
     teamsUI.classList.add("isHidden");
     let gameUI = document.querySelector("#gameUI");
@@ -466,11 +470,14 @@ let initGameResponse = function (data) {
 
 
 let guessSetupResponse = function (data) {
+    initGameWindow();
+    let gameUI = document.querySelector("#gameUI");
+    gameUI.classList.remove("isHidden");
     let parts = data.split(":");
     renderGame(parts);
     let word = parts[6].split(",")[0];
     let freq = parts[6].split(",")[1];
-    console.log(parts[6]);
+
     let cT = parts[3].split(",")[1];
 
     let prepend = "";
@@ -493,7 +500,10 @@ let guessSetupResponse = function (data) {
 
 let victoryResponse = function (data) {
     let parts = data.split(":");
+    initGameWindow();
     renderGame(parts);
+    let gameUI = document.querySelector("#gameUI");
+    gameUI.classList.remove("isHidden");
 
     let victoryDiv = document.querySelector("#currentTurn");
     let p = document.createElement("p");
@@ -564,11 +574,18 @@ let connResponse = function (evt) {
     } else if (keyWord === "guessSetup") {
         guessSetupResponse(data);
     } else if (keyWord === "spySetup") {
+        initGameWindow();
+        let gameUI = document.querySelector("#gameUI");
+        gameUI.classList.remove("isHidden");
         renderGame(data.split(":"));
     } else if (keyWord === "victory") {
         victoryResponse(data);
     } else if (keyWord === "text") {
         textResponse(data);
+    } else if (keyWord === "reassign"){
+        let parts = data.split(":");
+        currentRole = parts[2];
+        currentTeam = parts[1];
     }
 };
 

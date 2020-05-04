@@ -111,6 +111,10 @@ func (h *Hub) joinRoom(vars map[string]string, c*Client) string {
 			c.send <- []byte("createRoom:FAILURE:Room is Closed")
 			return FAILURE
 		}
+		room.clients[c] = true
+		msg := "reassign:"
+		msg += room.players[vars["username"]].team + ":" + room.players[vars["username"]].role
+		c.send <- []byte(msg)
 		return rejoinGAME
 	}
 
@@ -161,7 +165,7 @@ func (h *Hub) startGame(vars map[string]string) {
 		return
 	}
 	if room.roomState == "GAME"  {
-		log.Fatalf("Impossible to start game")
+		return
 	}
 	room.roomState = "GAME"
 	h.sendClientsGame(room)
@@ -192,6 +196,7 @@ func (h *Hub) processMessage(vars map[string]string, c *Client) {
 	} else if vars["type"] == "spyMove" {
 		room := h.rooms[vars["room"]]
 		num, _ := strconv.ParseInt(vars["num"], 10, 8)
+		log.Printf("%v, %v", vars["word"], num)
 		if room.game.Spy(vars["word"], int(num)) {
 			h.sendClientsGame(room)
 		}
