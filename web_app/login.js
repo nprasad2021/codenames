@@ -7,9 +7,15 @@ let currentTeam = "RED";
 let currentRole = CODEMASTER;
 
 let lastSentMessageUser = "";
-function removeCommas(txt) {
 
+function processInputElement(msg) {
+    console.log(msg);
+    let textMsg = msg.replace(/,/g, "");
+    textMsg = textMsg.replace(/;/g, "");
+    textMsg = textMsg.replace(/:/g, "");
+    return textMsg;
 }
+
 function sendRoom(queryType) {
     let q = queryType;
     return function () {
@@ -22,7 +28,7 @@ function sendRoom(queryType) {
         if (!processInputElement(name.value)) {
             return false;
         }
-        if (queryType === "joinRoom" && !processInputElement(room)) {
+        if (queryType === "joinRoom" && !processInputElement(room.value)) {
             return false;
         }
 
@@ -34,8 +40,8 @@ function sendRoom(queryType) {
             "room": processInputElement(room.value),
         });
         conn.send(msg);
-        room.value = "";
-        name.value = "";
+        //room.value = "";
+        //name.value = "";
         return false;
     }
 }
@@ -58,12 +64,7 @@ joinRoomButton.onclick = function () {
 
 
 /////////////////////////////////////////////////////////////////////////
-function processInputElement(msg) {
-    let textMsg = msg.replace(/,/g, "");
-    textMsg = textMsg.replace(/;/g, "");
-    textMsg = textMsg.replace(/:/g, "");
-    return textMsg;
-}
+
 
 let messageInput = document.querySelector(".messageInput");
 messageInput.addEventListener("keyup", function (evt) {
@@ -587,7 +588,7 @@ initializeGameDemo();
 
 let err = document.querySelector(".err");
 if (window["WebSocket"]) {
-    conn = new WebSocket("wss://" + document.location.host + "/ws");
+    conn = new WebSocket("ws://" + document.location.host + "/ws");
     conn.onclose = function () {
         err.innerHTML = "The webserver has crashed. Come play another time.";
     };
