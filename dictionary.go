@@ -35,7 +35,7 @@ func (d *Dict) choose(num int) []string {
 	var codewords []string
 	freq := num
 	for freq > 0 {
-		rn := rand.Intn(len(d.words))
+		rn := seededRand.Intn(len(d.words))
 		if _, ok := seen[rn]; !ok {
 			codewords = append(codewords, d.words[rn])
 			seen[rn] = true
