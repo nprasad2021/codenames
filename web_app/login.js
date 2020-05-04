@@ -19,19 +19,19 @@ function sendRoom(queryType) {
         if (!conn) {
             return false;
         }
-        if (!name) {
+        if (!processInputElement(name.value)) {
             return false;
         }
-        if (queryType === "joinRoom" && !room) {
+        if (queryType === "joinRoom" && !processInputElement(room)) {
             return false;
         }
 
-        lastUsername = name.value;
+        lastUsername = processInputElement(name.value);
         creator = queryType !== "joinRoom";
 
         let msg = JSON.stringify({
-            "type": q, "username": name.value,
-            "room": room.value,
+            "type": q, "username": lastUsername,
+            "room": processInputElement(room.value),
         });
         conn.send(msg);
         room.value = "";
@@ -58,13 +58,21 @@ joinRoomButton.onclick = function () {
 
 
 /////////////////////////////////////////////////////////////////////////
+function processInputElement(msg) {
+    let textMsg = msg.replace(/,/g, "");
+    textMsg = textMsg.replace(/;/g, "");
+    textMsg = textMsg.replace(/:/g, "");
+    return textMsg;
+}
 
 let messageInput = document.querySelector(".messageInput");
 messageInput.addEventListener("keyup", function (evt) {
     if (!conn) {
         return;
     }
-    let textMsg = messageInput.value.replace(/,/g, "");
+    let textMsg = processInputElement(messageInput.value.replace(/,/g,
+    textMsg = textMsg.replace(/;/g, "");
+    textMsg = textMsg.replace(/:/g, "");
     if (evt.key === "Enter" && textMsg !== "") {
         messageInput.value = "";
         let msg = JSON.stringify({
@@ -188,10 +196,14 @@ function submitClue() {
         return;
     }
     let clue = document.querySelector("#clue");
-    if (clue.value === "") {
+    if (clue.value === "" || clue.value.includes(" ")) {
+        clue.value = "";
         return;
     }
-    let word = clue.value;
+    let word = processInputElement(clue.value);
+    if (word === ""){
+        return;
+    }
     let freq = document.querySelector("#numWords").selectedIndex + 1;
 
     let msg = JSON.stringify({

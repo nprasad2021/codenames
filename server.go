@@ -15,7 +15,7 @@ import (
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
-		log.Fatalf("Port must be sent")
+		port = "8080"
 	}
 	hub := newHub()
 	http.Handle("/", http.FileServer(http.Dir("web_app/")))

@@ -72,7 +72,7 @@ func (gm *Game) Guess(cell int) {
 		return
 	}
 	if gm.currentRole != GUESSER || gm.currentFreq == 0 || gm.board[cell].clicked == true {
-		log.Fatalf("invalid operation")
+		return
 	}
 	gm.board[cell].clicked = true
 	if gm.board[cell].color == BLUE {
@@ -99,7 +99,7 @@ func (gm *Game) Spy(word string, num int) {
 		return
 	}
 	if gm.currentRole != CODEMASTER {
-		log.Fatalf("Invalid Operation")
+		return
 	}
 	gm.currentWord = word
 	gm.currentFreq = num + 1
