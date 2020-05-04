@@ -65,6 +65,7 @@ messageInput.addEventListener("keyup", function (evt) {
         return;
     }
     let textMsg = messageInput.value.replace(/,/g, "");
+    textMsg = textMsg.value.replace(/:/g, "");
     if (evt.key === "Enter" && textMsg !== "") {
         messageInput.value = "";
         let msg = JSON.stringify({
