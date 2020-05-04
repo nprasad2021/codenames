@@ -70,9 +70,7 @@ messageInput.addEventListener("keyup", function (evt) {
     if (!conn) {
         return;
     }
-    let textMsg = processInputElement(messageInput.value.replace(/,/g,
-    textMsg = textMsg.replace(/;/g, "");
-    textMsg = textMsg.replace(/:/g, "");
+    let textMsg = processInputElement(messageInput.value);
     if (evt.key === "Enter" && textMsg !== "") {
         messageInput.value = "";
         let msg = JSON.stringify({
