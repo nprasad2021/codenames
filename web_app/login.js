@@ -7,7 +7,9 @@ let currentTeam = "RED";
 let currentRole = CODEMASTER;
 
 let lastSentMessageUser = "";
+function removeCommas(txt) {
 
+}
 function sendRoom(queryType) {
     let q = queryType;
     return function () {
@@ -62,7 +64,7 @@ messageInput.addEventListener("keyup", function (evt) {
     if (!conn) {
         return;
     }
-    let textMsg = messageInput.value;
+    let textMsg = messageInput.value.replace(/,/g, "");
     if (evt.key === "Enter" && textMsg !== "") {
         messageInput.value = "";
         let msg = JSON.stringify({
