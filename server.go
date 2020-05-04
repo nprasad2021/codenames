@@ -5,21 +5,24 @@
 package main
 
 import (
-	"flag"
 	"log"
 	"net/http"
+	"os"
 )
 
-var addr = flag.String("addr", ":8080", "http service address")
+// var addr = flag.String("addr", ":8080", "http service address")
 
 func main() {
-	flag.Parse()
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Fatalf("Port must be sent")
+	}
 	hub := newHub()
 	http.Handle("/", http.FileServer(http.Dir("web_app/")))
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		serveWs(hub, w, r)
 	})
-	err := http.ListenAndServe(*addr, nil)
+	err := http.ListenAndServe(":" + port, nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
