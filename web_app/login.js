@@ -495,7 +495,7 @@ let guessSetupResponse = function (data) {
     let freqSpan = '<span class="bolder">' + freq + '</span>';
     let wordEntryMod = document.querySelector("#wordEntry");
     wordEntryMod.innerHTML = prepend + wordSpan + ". ";
-    wordEntryMod.innerHTML += freqPrepend + freqSpan + " guesses.";
+    wordEntryMod.innerHTML += freqPrepend + freqSpan + " guesses left.";
 };
 
 let victoryResponse = function (data) {
