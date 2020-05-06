@@ -223,6 +223,19 @@ func (h *Hub) processMessage(vars map[string]string, c *Client) {
 	}
 }
 
+func (h *Hub) Clean() {
+	for {
+		time.Sleep(20*time.Minute)
+		h.mu.Lock()
+		for roomName, room := range h.rooms {
+			if len(room.clients) == 0 {
+				delete(h.rooms, roomName)
+			}
+		}
+		h.mu.Unlock()
+	}
+}
+
 
 
 // Hub maintains the set of active clients and broadcasts messages to the

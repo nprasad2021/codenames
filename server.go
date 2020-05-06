@@ -15,6 +15,7 @@ func main() {
 		port = "8080"
 	}
 	hub := newHub()
+	go hub.Clean()
 	http.Handle("/", http.FileServer(http.Dir("web_app/")))
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		serveWs(hub, w, r)
