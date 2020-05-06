@@ -160,7 +160,7 @@ func (gm *Game) Render(role string, team string) string {
 		render += ":none"
 	}
 	if gm.currentRole == GUESSER {
-		render += ":" + gm.currentWord + "," + strconv.Itoa(gm.currentFreq)
+		render += ":" + gm.currentWord + "," + strconv.Itoa(gm.currentFreq - 1)
 	}
 
 	return render

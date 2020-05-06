@@ -32,13 +32,13 @@ function sendRoom(queryType) {
             return false;
         }
 
-        lastUsername = processInputElement(name.value);
-        lastRoom = processInputElement(room.value);
+        lastUsername = processInputElement(name.value).toLowerCase();
+        lastRoom = processInputElement(room.value).toUpperCase();
         creator = queryType !== "joinRoom";
 
         let msg = JSON.stringify({
             "type": q, "username": lastUsername,
-            "room": processInputElement(room.value),
+            "room": lastRoom,
         });
         conn.send(msg);
         //room.value = "";
@@ -493,9 +493,10 @@ let guessSetupResponse = function (data) {
     }
     let wordSpan = '<span class="bolder">' + word + '</span>';
     let freqSpan = '<span class="bolder">' + freq + '</span>';
+    let addSpan = '<span class="bolder">1</span>';
     let wordEntryMod = document.querySelector("#wordEntry");
     wordEntryMod.innerHTML = prepend + wordSpan + ". ";
-    wordEntryMod.innerHTML += freqPrepend + freqSpan + " guesses left.";
+    wordEntryMod.innerHTML += freqPrepend + freqSpan + " guesses left for the current clue, and " + addSpan + " additional guess you may use to solve a previous clue.";
 };
 
 let victoryResponse = function (data) {
