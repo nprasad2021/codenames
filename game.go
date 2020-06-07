@@ -37,6 +37,7 @@ type Game struct {
 	useTime bool
 	timeGuess int
 	timeCode int
+	transitioned bool
 
 
 	numTurns int
@@ -90,6 +91,8 @@ func (gm *Game) Guess(cell int) bool {
 	gm.currentFreq -= 1
 	if gm.currentFreq == 0 || gm.board[cell].color != gm.currentColor {
 		gm.transition()
+	} else {
+		gm.transitioned = false
 	}
 	if gm.board[cell].color == DEAD {
 		gm.done = true
@@ -169,13 +172,18 @@ func (gm *Game) Render(role string, team string) string {
 	if gm.currentRole == GUESSER {
 		render += ":" + gm.currentWord + "," + strconv.Itoa(gm.currentFreq - 1)
 	}
+	if gm.useTime && !gm.done && gm.transitioned {
+		render += ":timeWait;"
+		if gm.currentRole == GUESSER {
+			render += strconv.Itoa(gm.timeGuess)
+		} else {
+			render += strconv.Itoa(gm.timeCode)
+		}
+	}
 
 	return render
 }
 
-func (gm *Game) interruptChannel(accept chan bool) {
-
-}
 
 func (gm *Game) transition() {
 	gm.numTurns += 1
@@ -189,6 +197,7 @@ func (gm *Game) transition() {
 			gm.currentColor = RED
 		}
 	}
+	gm.transitioned = true
 
 }
 
@@ -221,6 +230,7 @@ func MakeGame(words []string) *Game {
 	game.victor = ""
 	game.numRedClicked = 0
 	game.numBlueClicked = 0
+	game.transitioned = true
 
 	numLeft := []int{9, 8, 7, 1}
 

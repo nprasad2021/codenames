@@ -171,7 +171,11 @@ func (h *Hub) startGame(vars map[string]string) {
 		return
 	}
 	room.roomState = "GAME"
-
+	room.game.useTime = room.useTime
+	if room.useTime {
+		room.game.timeCode = room.timeCode
+		room.game.timeGuess = room.timeGuess
+	}
 	h.sendClientsGame(room)
 	h.setupTimer(vars["room"], room)
 }
