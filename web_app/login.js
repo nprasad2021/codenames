@@ -1,4 +1,3 @@
-
 const FULL_DASH_ARRAY = 283;
 const WARNING_THRESHOLD = 10;
 const ALERT_THRESHOLD = 5;
@@ -82,7 +81,7 @@ function formatTime(time) {
 }
 
 function setRemainingPathColor(timeLeft) {
-    const { alert, warning, info } = COLOR_CODES;
+    const {alert, warning, info} = COLOR_CODES;
     if (timeLeft <= alert.threshold) {
         document
             .getElementById("base-timer-path-remaining")
@@ -134,14 +133,10 @@ function processInputElement(msg) {
     return textMsg;
 }
 
-// function resetTimer() {
-//
-// }
-//
 let timerButton = document.querySelector("#timerButton");
 let timeHandler = document.querySelector("#selectTimer");
 
-timerButton.onclick = function() {
+timerButton.onclick = function () {
     if (!creator) {
         return
     }
@@ -195,9 +190,9 @@ function initTimer() {
 
 function updateTimer(secondsCode, secondsGuess) {
     let sC = secondsCode % 60;
-    let mC = (secondsCode-sC) / 60;
+    let mC = (secondsCode - sC) / 60;
     let sG = secondsGuess % 60;
-    let mG = (secondsGuess-sG) / 60;
+    let mG = (secondsGuess - sG) / 60;
     document.querySelector("#minutesCode").value = mC;
     document.querySelector("#secondsCode").value = sC;
     document.querySelector("#minutesGuess").value = mG;
@@ -289,6 +284,37 @@ messageInput.addEventListener("keyup", function (evt) {
     }
 });
 
+let sizeButtons = document.querySelectorAll("#sizeBtns > button");
+let sizeButtonFn = function (evt) {
+    if (evt.target.classList.contains("deadBackground")) {
+        return;
+    }
+
+    let msg = JSON.stringify({
+        "type": "boardSize",
+        "username": lastUsername,
+        "room": lastRoom,
+        "size": evt.target.value,
+    });
+    conn.send(msg);
+};
+
+let sizeButtonResponse = function (size) {
+    for (let b of sizeButtons) {
+        b.classList.remove("deadBackground");
+        b.classList.remove("whiteText");
+    }
+    for (let b of sizeButtons) {
+        if (b.value == size) {
+            b.classList.add("deadBackground");
+            b.classList.add("whiteText")
+        }
+    }
+};
+
+for (let b of sizeButtons) {
+    b.onclick = sizeButtonFn;
+}
 /////////////////////////////////////////////////////////////////////////
 
 let roleButtons = document.querySelectorAll("#roleBtns > button");
@@ -471,9 +497,12 @@ function renderUsernameHeading(parts) {
     }
 
 }
-
+let root = document.documentElement;
 function populateBoard(board, cells, clickable) {
     console.log("clickable: ", clickable);
+    let dim = Math.sqrt(cells.length);
+    root.style.setProperty('--game-size', dim.toString());
+
     for (let i = 0; i < cells.length; i++) {
         let tmpArr = cells[i].split(",");
         let word = tmpArr[0];
@@ -497,7 +526,7 @@ function populateBoard(board, cells, clickable) {
 }
 
 function renderTime(parts) {
-    let timeEle = parts[parts.length-1];
+    let timeEle = parts[parts.length - 1];
     if (timeEle.includes("timeWait")) {
         TIME_LIMIT = parseInt(timeEle.split(";")[1]);
         timePassed = 0;
@@ -781,15 +810,12 @@ let textResponse = function (data) {
 
 };
 
-let connResponse = function (evt) {
-    let data = evt.data;
-    console.log(data);
+let connResponseSp = function(data) {
     let keyWord = data.split(":")[0];
     if (keyWord === "createRoom") {
         createRoomResponse(data);
     } else if (keyWord === "roleAssn") {
         roleAssnResponse(data);
-
     } else if (keyWord === "initGame") {
         initGameResponse(data);
     } else if (keyWord === "guessSetup") {
@@ -814,7 +840,23 @@ let connResponse = function (evt) {
         updateTimer(spyTime, guessTime);
     } else if (keyWord === "timeRemove") {
         removeTimer();
+    } else if (keyWord === "gameSize") {
+        let size = parseInt(data.split(":")[1]);
+        sizeButtonResponse(size);
+    } else if (keyWord === "creator") {
+        creator = true
     }
+};
+
+let connResponse = function (evt) {
+    let data = evt.data;
+    console.log("data", data);
+    let parts = data.split("\n");
+    console.log(parts);
+    for  (let part of parts) {
+        connResponseSp(part);
+    }
+
 };
 
 

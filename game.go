@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"math/rand"
 	"strconv"
 	"sync"
@@ -47,6 +46,8 @@ type Game struct {
 
 	numRedClicked int
 	numBlueClicked int
+	numRedPossible int
+	numBluePossible int
 
 	mu sync.Mutex
 }
@@ -120,9 +121,9 @@ func (gm *Game) Spy(word string, num int) bool{
 
 func (gm *Game) Victory() (bool, string){
 
-	if gm.numRedClicked == 9 {
+	if gm.numRedClicked == gm.numRedPossible {
 		return true, RED
-	} else if gm.numBlueClicked == 8 {
+	} else if gm.numBlueClicked == gm.numBluePossible {
 		return true, BLUE
 	}
 	return false, NEUTRAL
@@ -218,8 +219,12 @@ func getColor(numLeft []int) int {
 }
 
 func MakeGame(words []string) *Game {
-	if len(words) != 25 {
-		log.Fatalf("Expect 25 words")
+	numLeft := []int{9, 8, 7, 1}
+
+	if len(words) == 36 {
+		numLeft = []int{13, 12, 9, 2}
+	} else if len(words) == 49 {
+		numLeft = []int{18, 17, 11, 3}
 	}
 	game := &Game{}
 	game.board = []*Cell{}
@@ -231,8 +236,10 @@ func MakeGame(words []string) *Game {
 	game.numRedClicked = 0
 	game.numBlueClicked = 0
 	game.transitioned = true
+	game.useTime = false
+	game.numRedPossible = numLeft[0]
+	game.numBluePossible = numLeft[1]
 
-	numLeft := []int{9, 8, 7, 1}
 
 	for i := 0; i < len(words); i++ {
 		c := &Cell{}

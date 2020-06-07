@@ -27,6 +27,8 @@ type Room struct {
 	useTime bool
 	timeCode int
 	timeGuess int
+
+	boardSize int
 }
 
 const (
@@ -85,11 +87,9 @@ func (h *Hub) createRoom(vars map[string]string, c*Client) bool{
 		clients: make(map[*Client]bool),
 		players: make(map[string]*Player),
 		roomState: "PENDING",
-		game: MakeGame(h.words.choose(25)),
 		useTime: false,
+		boardSize: 5,
 	}
-	room.game.useTime = false
-	room.game.mu = h.mu
 	player := &Player{
 		username: vars["username"],
 		team:     RED,
@@ -115,6 +115,9 @@ func (h *Hub) joinRoom(vars map[string]string, c*Client) string {
 			return FAILURE
 		}
 		room.clients[c] = true
+		if room.creator.username == vars["username"] {
+			c.send <- []byte("creator:nothing")
+		}
 		msg := "reassign:"
 		msg += room.players[vars["username"]].team + ":" + room.players[vars["username"]].role
 		c.send <- []byte(msg)
@@ -122,17 +125,19 @@ func (h *Hub) joinRoom(vars map[string]string, c*Client) string {
 	}
 
 	room.clients[c] = true
-	player := &Player{
-		username: vars["username"],
-		team:     RED,
-		role:     CODEMASTER,
-		creator:  false,
+	if _, ok := room.players[vars["username"]]; !ok {
+		player := &Player{
+			username: vars["username"],
+			team:     RED,
+			role:     CODEMASTER,
+			creator:  false,
+		}
+		room.players[player.username] = player
 	}
-	room.players[player.username] = player
 	return SUCCESS
 }
 
-func (h *Hub) roleAssn(vars map[string]string) {
+func (h *Hub) roleAssn(vars map[string]string, c *Client) {
 	log.Printf("vars: %v", vars)
 	room := h.rooms[vars["room"]]
 	if room.roomState != "PENDING" {
@@ -160,6 +165,16 @@ func (h *Hub) roleAssn(vars map[string]string) {
 		msg += ":CONTINUE," + err
 	}
 	h.sendClients(room, msg)
+
+	if room.creator.username == vars["username"] {
+		c.send <- []byte("creator:nothing")
+	}
+	if room.useTime {
+		msgTime := "timeChange:" + strconv.Itoa(room.timeGuess) + ":" + strconv.Itoa(room.timeCode)
+		c.send <- []byte(msgTime)
+	}
+	msg = "gameSize:" + strconv.Itoa(room.boardSize)
+	c.send <- []byte(msg)
 }
 
 func (h *Hub) startGame(vars map[string]string) {
@@ -171,6 +186,7 @@ func (h *Hub) startGame(vars map[string]string) {
 		return
 	}
 	room.roomState = "GAME"
+	room.game = MakeGame(h.words.choose(room.boardSize*room.boardSize))
 	room.game.useTime = room.useTime
 	if room.useTime {
 		room.game.timeCode = room.timeCode
@@ -188,18 +204,18 @@ func (h *Hub) processMessage(vars map[string]string, c *Client) {
 
 	if vars["type"] == "createRoom" {
 		if h.createRoom(vars, c) {
-			h.roleAssn(vars)
+			h.roleAssn(vars, c)
 		}
 	} else if vars["type"] == "joinRoom" {
 		rType := h.joinRoom(vars, c)
 		if rType == SUCCESS {
-			h.roleAssn(vars)
+			h.roleAssn(vars, c)
 		} else if rType == rejoinGAME {
 			room := h.rooms[vars["room"]]
 			h.sendClientsGame(room)
 		}
 	} else if vars["type"] == "roleAssn" {
-		h.roleAssn(vars)
+		h.roleAssn(vars, c)
 	} else if vars["type"] == "startGame" {
 		h.startGame(vars)
 	} else if vars["type"] == "spyMove" {
@@ -231,12 +247,9 @@ func (h *Hub) processMessage(vars map[string]string, c *Client) {
 		if room.roomState != "GAME" {
 			return
 		}
-		room.game = MakeGame(h.words.choose(25))
-		room.game.mu = h.mu
-		room.game.useTime = false
 
 		room.roomState = "PENDING"
-		h.roleAssn(vars)
+		h.roleAssn(vars, c)
 	} else if vars["type"] == "text" {
 		room := h.rooms[vars["room"]]
 		msg := "text:" + vars["username"] + ":" + vars["msg"]
@@ -279,7 +292,15 @@ func (h *Hub) processMessage(vars map[string]string, c *Client) {
 
 		h.sendClientsGame(room)
 		h.setupTimer(vars["room"], room)
-
+	} else if vars["type"] == "boardSize" {
+		room, ok := h.rooms[vars["room"]]
+		if !ok {
+			return
+		}
+		size, _ := strconv.ParseInt(vars["size"], 10, 8)
+		room.boardSize = int(size)
+		msg := "gameSize:" + vars["size"]
+		h.sendClients(room, msg)
 	}
 }
 
