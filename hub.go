@@ -280,6 +280,9 @@ func (h *Hub) processMessage(vars map[string]string, c *Client) {
 }
 
 func (h *Hub) setupTimer(roomName string, room *Room) {
+	if !room.useTime {
+		return
+	}
 	interval := room.timeGuess
 	if room.game.currentRole == CODEMASTER {
 		interval = room.timeCode

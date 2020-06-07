@@ -700,7 +700,7 @@ initializeGameDemo();
 
 let err = document.querySelector(".err");
 if (window["WebSocket"]) {
-    conn = new WebSocket("wss://" + document.location.host + "/ws");
+    conn = new WebSocket("ws://" + document.location.host + "/ws");
     conn.onclose = function () {
         err.innerHTML = "The webserver has crashed. Come play another time.";
     };
