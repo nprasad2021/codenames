@@ -23,6 +23,10 @@ type Room struct {
 	creator *Player
 	game *Game
 	timer time.Duration
+
+	useTime bool
+	timeCode int
+	timeGuess int
 }
 
 const (
@@ -82,7 +86,10 @@ func (h *Hub) createRoom(vars map[string]string, c*Client) bool{
 		players: make(map[string]*Player),
 		roomState: "PENDING",
 		game: MakeGame(h.words.choose(25)),
+		useTime: false,
 	}
+	room.game.useTime = false
+	room.game.mu = h.mu
 	player := &Player{
 		username: vars["username"],
 		team:     RED,
@@ -164,7 +171,9 @@ func (h *Hub) startGame(vars map[string]string) {
 		return
 	}
 	room.roomState = "GAME"
+
 	h.sendClientsGame(room)
+	h.setupTimer(vars["room"], room)
 }
 
 
@@ -195,6 +204,7 @@ func (h *Hub) processMessage(vars map[string]string, c *Client) {
 		log.Printf("%v, %v", vars["word"], num)
 		if room.game.Spy(vars["word"], int(num)) {
 			h.sendClientsGame(room)
+			h.setupTimer(vars["room"], room)
 		}
 
 	} else if vars["type"] == "guessMove" {
@@ -202,11 +212,15 @@ func (h *Hub) processMessage(vars map[string]string, c *Client) {
 		num, _ := strconv.ParseInt(vars["cell"], 10, 8)
 		if room.game.Guess(int(num)) {
 			h.sendClientsGame(room)
+			if room.game.currentRole == CODEMASTER {
+				h.setupTimer(vars["room"], room)
+			}
 		}
 
 	} else if vars["type"] == "pass" {
 		room := h.rooms[vars["room"]]
 		room.game.transition()
+		h.setupTimer(vars["room"], room)
 		h.sendClientsGame(room)
 	} else if vars["type"] == "newGame" {
 		room := h.rooms[vars["room"]]
@@ -214,13 +228,72 @@ func (h *Hub) processMessage(vars map[string]string, c *Client) {
 			return
 		}
 		room.game = MakeGame(h.words.choose(25))
+		room.game.mu = h.mu
+		room.game.useTime = false
+
 		room.roomState = "PENDING"
-		h.roleAssn(vars);
+		h.roleAssn(vars)
 	} else if vars["type"] == "text" {
 		room := h.rooms[vars["room"]]
 		msg := "text:" + vars["username"] + ":" + vars["msg"]
 		h.sendClients(room, msg)
+	} else if vars["type"] == "timeChange" {
+		room := h.rooms[vars["room"]]
+		if room.roomState != "PENDING" {
+			return
+		}
+		msg := ""
+		if vars["valid"] == "0" {
+			room.useTime = false
+			msg = "timeRemove:Nothing"
+		} else {
+			room.useTime = true
+			mC, _ := strconv.ParseInt(vars["minutesCode"], 10, 8)
+			sC, _ := strconv.ParseInt(vars["secondsCode"], 10, 8)
+			mG, _ := strconv.ParseInt(vars["minutesGuess"], 10, 8)
+			sG, _ := strconv.ParseInt(vars["secondsGuess"], 10, 8)
+			room.timeGuess =  int(sG) + int(mG)*60
+			room.timeCode =  int(sC) + int(mC)*60
+
+			msg = "timeChange:" + strconv.Itoa(room.timeGuess) + ":" + strconv.Itoa(room.timeCode)
+		}
+
+		h.sendClients(room, msg)
+	} else if vars["type"] == "sleepInterrupt" {
+		room, ok := h.rooms[vars["room"]]
+		if !ok || room.game.done {
+			return
+		}
+		turn, _ := strconv.ParseInt(vars["turn"], 10, 8)
+		if room.game.numTurns != int(turn) {
+			return
+		}
+		room.game.transition()
+		if room.game.currentRole == GUESSER {
+			room.game.transition()
+		}
+
+		h.sendClientsGame(room)
+		h.setupTimer(vars["room"], room)
+
 	}
+}
+
+func (h *Hub) setupTimer(roomName string, room *Room) {
+	interval := room.timeGuess
+	if room.game.currentRole == CODEMASTER {
+		interval = room.timeCode
+	}
+	go h.startTimer(interval, room.game.numTurns, roomName)
+}
+
+func (h *Hub) startTimer(interval int, turn int, roomName string) {
+	time.Sleep(time.Duration(interval) * time.Second)
+	m := make(map[string]string)
+	m["room"] = roomName
+	m["type"] = "sleepInterrupt"
+	m["turn"] = strconv.Itoa(turn)
+	h.processMessage(m, &Client{})
 }
 
 func (h *Hub) Clean() {

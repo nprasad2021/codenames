@@ -5,6 +5,7 @@
     <title>codenames</title>
     <link rel="stylesheet" href="game.css">
     <script src="login.js" defer></script>
+    <script src="login.js" defer></script>
 </head>
 <body>
 <ul class="nav">
@@ -67,6 +68,32 @@
             </label>
             <div class="isHidden" id="respOutput"></div>
             <button class="isHidden" id="startGameButton">Play</button>
+            <button id="timerButton" class="isHidden" value="No">Add a timer</button>
+            <section id="selectTimer" class="isHidden">
+                <div>
+                    Codemaster
+                    <label>
+                        Minutes
+                        <input type="number" min="0" max="10" value="2" id="minutesCode" class="timeTypes">
+                    </label>
+                    <label>
+                        Seconds:
+                        <input type="number" min="0" max="59" value="0" id="secondsCode" class="timeTypes">
+                    </label>
+                </div>
+                <div>
+                    Guesser
+                    <label>
+                        Minutes
+                        <input type="number" min="0" max="10" value="1" id="minutesGuess" class="timeTypes">
+                    </label>
+                    <label>
+                        Seconds:
+                        <input type="number" min="0" max="59" value="30" id="secondsGuess" class="timeTypes">
+                    </label>
+                </div>
+                <button id="timerSubmit">Submit</button>
+            </section>
         </section>
         <section class="isHidden" id="gameUI">
             <div id="score">

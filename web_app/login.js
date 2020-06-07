@@ -1,3 +1,4 @@
+
 let conn;
 let lastRoom, lastUsername, creator;
 const CODEMASTER = "CODEMASTER";
@@ -15,6 +16,89 @@ function processInputElement(msg) {
     textMsg = textMsg.replace(/:/g, "");
     return textMsg;
 }
+
+// function resetTimer() {
+//
+// }
+//
+let timerButton = document.querySelector("#timerButton");
+let timeHandler = document.querySelector("#selectTimer");
+
+timerButton.onclick = function() {
+    if (!creator) {
+        return
+    }
+    if (timerButton.value === "No") {
+        timeHandler.classList.remove("isHidden");
+        timerButton.value = "Yes";
+        timerButton.innerHTML = "Remove Timer";
+    } else {
+        timerButton.value = "No";
+
+        console.log("hidden");
+        timerButton.innerHTML = "Add timer";
+        let msg = JSON.stringify({
+            "type": "timeChange",
+            "username": lastUsername,
+            "room": lastRoom,
+            "valid": "0",
+        });
+        conn.send(msg);
+        timeHandler.classList.add("isHidden");
+    }
+
+};
+let timerSubmit = document.getElementById("timerSubmit");
+timerSubmit.onclick = function (evt) {
+    let mC = document.getElementById("minutesCode");
+    let sC = document.getElementById("secondsCode");
+    let mG = document.getElementById("minutesGuess");
+    let sG = document.getElementById("secondsGuess");
+    console.log(mC)
+    let msg = JSON.stringify({
+        "type": "timeChange",
+        "username": lastUsername,
+        "room": lastRoom,
+        "valid": "1",
+        "minutesCode": mC.value,
+        "secondsCode": sC.value,
+        "minutesGuess": mG.value,
+        "secondsGuess": sG.value,
+    });
+    console.log(msg);
+    conn.send(msg);
+};
+
+function initTimer() {
+    if (!creator) {
+        return
+    }
+    timerButton.classList.remove("isHidden");
+}
+
+function updateTimer(secondsCode, secondsGuess) {
+    let sC = secondsCode % 60;
+    let mC = (secondsCode-sC) / 60;
+    let sG = secondsGuess % 60;
+    let mG = (secondsGuess-sG) / 60;
+    document.querySelector("#minutesCode").value = mC;
+    document.querySelector("#secondsCode").value = sC;
+    document.querySelector("#minutesGuess").value = mG;
+    document.querySelector("#secondsGuess").value = sG;
+    timeHandler.classList.remove("isHidden");
+    if (!creator) {
+        for (let timeInp of document.querySelectorAll(".timeTypes")) {
+            timeInp.disabled = true;
+        }
+        timerSubmit.classList.add("isHidden");
+    }
+
+}
+
+function removeTimer() {
+    timeHandler.classList.add('isHidden');
+}
+
 
 function sendRoom(queryType) {
     let q = queryType;
@@ -35,7 +119,7 @@ function sendRoom(queryType) {
         lastUsername = processInputElement(name.value).toLowerCase();
         lastRoom = processInputElement(room.value).toUpperCase();
         creator = queryType !== "joinRoom";
-
+        initTimer();
         let msg = JSON.stringify({
             "type": q, "username": lastUsername,
             "room": lastRoom,
@@ -570,6 +654,7 @@ let connResponse = function (evt) {
         createRoomResponse(data);
     } else if (keyWord === "roleAssn") {
         roleAssnResponse(data);
+
     } else if (keyWord === "initGame") {
         initGameResponse(data);
     } else if (keyWord === "guessSetup") {
@@ -583,10 +668,17 @@ let connResponse = function (evt) {
         victoryResponse(data);
     } else if (keyWord === "text") {
         textResponse(data);
-    } else if (keyWord === "reassign"){
+    } else if (keyWord === "reassign") {
         let parts = data.split(":");
         currentRole = parts[2];
         currentTeam = parts[1];
+    } else if (keyWord === "timeChange") {
+        let parts = data.split(":");
+        let spyTime = parts[2];
+        let guessTime = parts[1];
+        updateTimer(spyTime, guessTime);
+    } else if (keyWord === "timeRemove") {
+        removeTimer();
     }
 };
 

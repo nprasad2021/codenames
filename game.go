@@ -4,6 +4,7 @@ import (
 	"log"
 	"math/rand"
 	"strconv"
+	"sync"
 )
 
 const (
@@ -33,6 +34,10 @@ type Game struct {
 
 	currentWord string
 	currentFreq int
+	useTime bool
+	timeGuess int
+	timeCode int
+
 
 	numTurns int
 
@@ -41,6 +46,8 @@ type Game struct {
 
 	numRedClicked int
 	numBlueClicked int
+
+	mu sync.Mutex
 }
 
 func isPlayersComplete(players map[string]*Player) (bool, string) {
@@ -166,6 +173,10 @@ func (gm *Game) Render(role string, team string) string {
 	return render
 }
 
+func (gm *Game) interruptChannel(accept chan bool) {
+
+}
+
 func (gm *Game) transition() {
 	gm.numTurns += 1
 	if gm.currentRole == CODEMASTER {
@@ -178,6 +189,7 @@ func (gm *Game) transition() {
 			gm.currentColor = RED
 		}
 	}
+
 }
 
 func getColor(numLeft []int) int {
