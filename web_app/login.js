@@ -877,7 +877,7 @@ initializeGameDemo();
 
 let err = document.querySelector(".err");
 if (window["WebSocket"]) {
-    conn = new WebSocket("wss://" + document.location.host + "/ws");
+    conn = new WebSocket("wss://" + "go-bulls.herokuapp.com" + "/ws");
     conn.onclose = function () {
         err.innerHTML = "There are problems with your internet connectivity. Reload and try again!";
     };
